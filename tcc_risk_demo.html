@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台泥全球風險預判系統 | TCC Risk Intelligence</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --rust:#BF4926; --rust-light:#D4705A;
+  --charcoal:#4A4A4A; --charcoal-dark:#2D2D2D;
+  --teal:#2A9D8F; --blue:#007EA7;
+  --stone:#F4F4F4; --white:#FFFFFF;
+  --sidebar-w:260px;
+  --ga:#BF4926; --gb:#007EA7; --gc:#2A9D8F; --gd:#6C5B7B; --ge:#8B8B8B;
+  --group-a:#BF4926; --group-b:#007EA7; --group-c:#2A9D8F; --group-d:#D4705A; --group-e:#8B8B8B;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--white);color:var(--charcoal);-webkit-font-smoothing:antialiased}
+
+/* ══════ SHELL LAYOUT ══════ */
+.shell{display:flex;min-height:100vh}
+
+/* ── Left Sidebar ── */
+.nav{width:var(--sidebar-w);background:var(--charcoal-dark);color:var(--white);
+  display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;
+  overflow-y:auto}
+.nav-brand{padding:32px 24px 28px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.nav-brand-sub{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:6px}
+.nav-brand-name{font-size:18px;font-weight:900;line-height:1.3;letter-spacing:-0.3px}
+.nav-brand-name span{color:var(--rust)}
+.nav-tabs{padding:16px 0;flex:1}
+.nav-tab{display:flex;align-items:center;gap:12px;padding:14px 24px;cursor:pointer;
+  transition:all .15s;border-left:3px solid transparent;color:rgba(255,255,255,0.45);
+  font-size:13px;font-weight:500}
+.nav-tab:hover{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.7)}
+.nav-tab.active{background:rgba(255,255,255,0.06);color:var(--white);
+  border-left-color:var(--rust)}
+.nav-tab-icon{font-size:18px;width:24px;text-align:center;flex-shrink:0}
+.nav-tab-num{font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.2);
+  margin-left:auto}
+.nav-tab.disabled{opacity:0.25;pointer-events:none}
+.nav-footer{padding:20px 24px;border-top:1px solid rgba(255,255,255,0.06);
+  font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.15)}
+
+/* ── Main area ── */
+.main{margin-left:var(--sidebar-w);flex:1;min-height:100vh}
+.page{display:none;padding:48px 40px;max-width:1200px}
+.page.active{display:block}
+
+/* ══════ PAGE 1: BUBBLE ══════ */
+#p1 .header{display:grid;grid-template-columns:1fr auto;align-items:end;gap:24px;
+  margin-bottom:48px;padding-bottom:24px;border-bottom:3px solid var(--charcoal-dark)}
+#p1 .header-left{display:flex;flex-direction:column;gap:8px}
+.section-label{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;
+  letter-spacing:2.5px;text-transform:uppercase;color:var(--rust)}
+.section-title{font-size:32px;font-weight:900;line-height:1.15;color:var(--charcoal-dark);letter-spacing:-0.5px}
+.section-subtitle{font-size:14px;font-weight:300;color:#888;margin-top:2px}
+#p1 .header-right{text-align:right}
+.campaign-label{font-size:12px;color:#999;margin-bottom:4px}
+.campaign-name{font-size:15px;font-weight:500;color:var(--charcoal)}
+.campaign-date{font-family:'DM Mono',monospace;font-size:12px;color:#aaa;margin-top:2px}
+
+.kpi-strip{display:grid;grid-template-columns:280px 1fr;margin-bottom:56px;background:var(--stone);overflow:hidden}
+.kpi-main{background:var(--charcoal-dark);color:var(--white);padding:32px 36px;display:flex;flex-direction:column;justify-content:center}
+.kpi-main-label{font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:8px}
+.kpi-main-value{font-family:'DM Mono',monospace;font-size:48px;font-weight:500;line-height:1}
+.kpi-main-unit{font-family:'Noto Sans TC',sans-serif;font-size:20px;font-weight:300;margin-left:4px}
+.kpi-main-range{font-size:13px;font-weight:300;color:rgba(255,255,255,0.45);margin-top:8px}
+.kpi-details{display:grid;grid-template-columns:repeat(4,1fr)}
+.kpi-item{padding:24px 20px;border-right:1px solid rgba(0,0,0,0.06);display:flex;flex-direction:column;justify-content:center}
+.kpi-item:last-child{border-right:none}
+.kpi-item-label{font-size:11px;color:#999;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.kpi-item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.kpi-item-value{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:var(--charcoal-dark)}
+.kpi-item-sub{font-size:11px;color:#bbb;margin-top:3px}
+.chart-section{display:grid;grid-template-columns:1fr 240px;gap:40px;align-items:start}
+.chart-wrapper{position:relative;background:var(--stone);overflow:hidden;aspect-ratio:16/10}
+.chart-wrapper svg{width:100%;height:100%;display:block}
+.bsidebar{padding-top:8px}
+.bsidebar-title{font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#999;
+  margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid #e0e0e0}
+.legend-group{margin-bottom:24px}
+.legend-group-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-group-name{font-size:13px;font-weight:700;color:var(--charcoal-dark)}
+.legend-group-overlap{font-family:'DM Mono',monospace;font-size:10px;color:#aaa;margin-left:auto}
+.legend-media-list{margin-left:18px;list-style:none}
+.legend-media-item{font-size:12px;color:#777;padding:3px 0;display:flex;justify-content:space-between;border-bottom:1px solid rgba(0,0,0,0.04)}
+.legend-media-reach{font-family:'DM Mono',monospace;font-size:11px;color:#aaa}
+.bubble-label{font-family:'Noto Sans TC',sans-serif;font-weight:500;fill:white;text-anchor:middle;pointer-events:none;dominant-baseline:central}
+.bubble-reach-label{font-family:'DM Mono',monospace;font-weight:400;fill:rgba(255,255,255,0.7);text-anchor:middle;pointer-events:none}
+
+/* tooltip (bubble) */
+.tooltip{position:fixed;pointer-events:none;background:var(--charcoal-dark);color:#fff;padding:14px 18px;
+  font-size:13px;line-height:1.6;opacity:0;transition:opacity .15s;z-index:1000;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,0.2)}
+.tooltip.active{opacity:1}
+.tooltip-media{font-weight:700;font-size:15px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.tooltip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tooltip-row{display:flex;justify-content:space-between;gap:16px;font-size:12px;padding:2px 0}
+.tooltip-label{color:rgba(255,255,255,0.5)} .tooltip-value{font-family:'DM Mono',monospace;font-weight:500}
+.tooltip-divider{border:none;border-top:1px solid rgba(255,255,255,0.12);margin:6px 0}
+
+/* ══════ PAGE 2: HEATMAP ══════ */
+#p2 .header{display:grid;grid-template-columns:1fr auto;align-items:end;gap:24px;
+  margin-bottom:40px;padding-bottom:24px;border-bottom:3px solid var(--charcoal-dark)}
+.header-stat{font-family:'DM Mono',monospace;font-size:13px;color:#999}
+.header-stat strong{font-size:20px;color:var(--charcoal-dark);font-weight:700}
+.trends-bar{background:var(--charcoal-dark);color:#fff;padding:14px 24px;margin-bottom:32px;display:flex;align-items:center;gap:16px;overflow:hidden}
+.trends-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.4);white-space:nowrap;flex-shrink:0}
+.trends-scroll{display:flex;gap:8px;overflow-x:auto;padding:2px 0;scrollbar-width:none}
+.trends-scroll::-webkit-scrollbar{display:none}
+.trend-chip{background:rgba(255,255,255,0.08);padding:4px 12px;font-size:12px;white-space:nowrap;flex-shrink:0;cursor:default;transition:background .15s}
+.trend-chip:hover{background:rgba(191,73,38,0.3)}
+.trend-vol{font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.35);margin-left:6px}
+.hm-filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:28px}
+.hm-filters button{padding:7px 18px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #ddd;background:#fff;color:#666;font-family:'Noto Sans TC',sans-serif;transition:all .15s}
+.hm-filters button.active{color:#fff;border-color:transparent}
+.hm-filters button[data-g="ALL"].active{background:var(--charcoal-dark)}
+.hm-filters button[data-g="A"].active{background:var(--ga)}
+.hm-filters button[data-g="B"].active{background:var(--gb)}
+.hm-filters button[data-g="C"].active{background:var(--gc)}
+.hm-filters button[data-g="D"].active{background:var(--gd)}
+.hm-filters button[data-g="E"].active{background:var(--ge)}
+.hm-toggle{font-size:11px;color:#888;margin-left:16px;display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+.group-section{margin-bottom:36px} .group-header{font-size:14px;font-weight:700;padding-bottom:5px;margin-bottom:16px;border-bottom:2px solid}
+.media-block{margin-bottom:28px} .media-title{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.media-title .name{font-size:15px;font-weight:700} .media-title .meta{font-family:'DM Mono',monospace;font-size:11px;color:#aaa}
+.heatmap-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.heatmap{border-collapse:collapse;font-size:10px}
+table.heatmap th{font-family:'DM Mono',monospace;font-size:8px;color:#aaa;font-weight:400;padding:0 0 3px;text-align:center;min-width:28px;width:28px}
+table.heatmap th.row-label{text-align:right;padding-right:8px;min-width:auto;width:auto;white-space:nowrap}
+table.heatmap th.avg-col{min-width:52px;font-size:9px;color:#999}
+table.heatmap td.cell{width:28px;min-width:28px;height:24px;text-align:center;font-family:'DM Mono',monospace;font-size:8px;padding:0;border:1px solid rgba(0,0,0,0.04);cursor:pointer;transition:outline .1s;position:relative}
+table.heatmap td.cell:hover{outline:2px solid var(--charcoal-dark);outline-offset:-1px;z-index:2}
+table.heatmap td.dow-label{text-align:right;padding-right:8px;font-size:10px;white-space:nowrap}
+table.heatmap td.dow-label.weekend{color:#e67e22;font-weight:600}
+table.heatmap td.avg-val{text-align:center;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;padding-left:8px}
+.legend-strip{display:flex;align-items:center;gap:6px;margin-top:32px;padding:16px 0;border-top:1px solid #e0e0e0;font-size:11px;color:#999}
+.legend-swatch{width:28px;height:16px;border:1px solid rgba(0,0,0,0.06)}
+.legend-sep{margin:0 8px;color:#ddd}
+/* heatmap tooltip */
+.tip{position:fixed;pointer-events:none;background:var(--charcoal-dark);color:#fff;padding:14px 18px;font-size:12px;line-height:1.6;opacity:0;transition:opacity .12s;z-index:1000;min-width:220px;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.25)}
+.tip.on{opacity:1}
+.tip-head{font-weight:700;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.tip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tip-row{display:flex;justify-content:space-between;gap:12px;padding:1px 0}
+.tip-lbl{color:rgba(255,255,255,0.45)} .tip-val{font-family:'DM Mono',monospace;font-weight:500}
+.tip-hr{border:none;border-top:1px solid rgba(255,255,255,0.1);margin:6px 0}
+.tip-trend{margin-top:4px}
+.tip-trend-tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--rust-light);text-transform:uppercase;margin-bottom:3px}
+.tip-trend-list{font-size:11px;color:rgba(255,255,255,0.7);line-height:1.5}
+.tip-title-tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--teal);text-transform:uppercase;margin-bottom:3px;margin-top:6px}
+.tip-title-item{font-size:11px;color:rgba(255,255,255,0.6);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px}
+
+/* shared */
+.method-note{margin-top:40px;padding-top:20px;border-top:1px solid #e0e0e0;display:grid;grid-template-columns:auto 1fr;gap:16px}
+.method-tag{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--teal);background:rgba(42,157,143,0.08);padding:4px 10px;white-space:nowrap}
+.method-text{font-size:12px;line-height:1.7;color:#999} .method-text strong{color:#777;font-weight:500}
+/* ══════ PAGE 3: HRDD MATRIX ══════ */
+.hrdd-matrix-wrap{overflow-x:auto;margin-bottom:24px}
+.hrdd-matrix{border-collapse:collapse;width:100%;min-width:700px}
+.hrdd-matrix th{font-size:12px;font-weight:700;color:var(--charcoal-dark);padding:10px 6px;text-align:center;
+  border-bottom:2px solid var(--charcoal-dark);white-space:nowrap;position:relative}
+.hrdd-matrix th.col-issue{writing-mode:vertical-lr;text-orientation:mixed;font-size:13px;padding:12px 4px 8px;
+  min-width:44px;vertical-align:bottom;letter-spacing:1px}
+.hrdd-matrix th.col-country{text-align:left;font-size:14px;padding-left:0;min-width:80px}
+.hrdd-matrix th.col-avg{font-family:'DM Mono',monospace;font-size:11px;color:#999;min-width:56px}
+.hrdd-matrix td{text-align:center;padding:0;height:44px;min-width:44px;font-family:'DM Mono',monospace;
+  font-size:13px;font-weight:500;border:2px solid var(--white);cursor:pointer;transition:outline .1s,transform .1s}
+.hrdd-matrix td:hover{outline:2px solid var(--charcoal-dark);outline-offset:-2px;z-index:2;transform:scale(1.05)}
+.hrdd-matrix td.row-country{text-align:left;font-family:'Noto Sans TC',sans-serif;font-size:14px;font-weight:900;
+  color:var(--charcoal-dark);background:transparent!important;padding:0 12px 0 0;border:none;cursor:pointer;min-width:80px;white-space:nowrap}
+.hrdd-matrix td.row-country:hover{color:var(--rust);transform:none;outline:none}
+.hrdd-matrix td.row-country .country-zh{font-size:11px;font-weight:400;color:#999;margin-left:6px}
+.hrdd-matrix td.row-avg{font-family:'DM Mono',monospace;font-size:15px;font-weight:700;background:transparent!important;
+  border:none;padding:0 0 0 8px}
+.hrdd-legend{display:flex;align-items:center;gap:10px;margin-bottom:32px;font-size:11px;color:#999}
+.hrdd-legend-label{font-weight:500;color:#777}
+.hrdd-legend-bar{width:200px;height:14px;border-radius:0;
+  background:linear-gradient(to right,#faf0e6,#e8c8a0,#d4a574,#c08050,#a05a30,#7a3518)}
+.hrdd-legend-note{margin-left:auto;font-size:10px;color:#bbb}
+
+.risk-bar-row{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:11px}
+.risk-bar-name{width:80px;color:#888;text-align:right;flex-shrink:0}
+.risk-bar-track{flex:1;height:8px;background:rgba(0,0,0,0.06);position:relative}
+.risk-bar-fill{height:100%;transition:width .6s ease}
+.risk-bar-val{font-family:'DM Mono',monospace;width:36px;font-size:10px;color:#999;flex-shrink:0}
+
+/* matrix tooltip */
+.mtip{position:fixed;pointer-events:none;background:var(--charcoal-dark);color:#fff;padding:12px 16px;
+  font-size:12px;line-height:1.5;opacity:0;transition:opacity .12s;z-index:1000;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+.mtip.on{opacity:1}
+.mtip-head{font-weight:700;font-size:14px;margin-bottom:4px}
+.mtip-sub{font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:6px}
+.mtip-score{font-family:'DM Mono',monospace;font-size:24px;font-weight:700}
+
+/* ══════ PAGE 4: SUPPLIER RISK ══════ */
+.sup-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:36px}
+.sup-kpi-card{background:var(--stone);padding:20px;text-align:center}
+.sup-kpi-val{font-family:'DM Mono',monospace;font-size:32px;font-weight:700;color:var(--charcoal-dark)}
+.sup-kpi-label{font-size:11px;color:#999;margin-top:4px}
+.sup-matrix-wrap{position:relative;background:var(--stone);padding:32px;margin-bottom:36px}
+.sup-matrix-title{font-size:13px;font-weight:700;color:var(--charcoal-dark);margin-bottom:16px}
+.sup-matrix-axes{position:relative;width:100%;max-width:700px;aspect-ratio:1;margin:0 auto}
+.sup-matrix-svg{width:100%;height:100%;display:block}
+.sup-table-wrap{overflow-x:auto}
+.sup-table{width:100%;border-collapse:collapse;font-size:13px}
+.sup-table th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--charcoal-dark);font-weight:700;font-size:11px;
+  text-transform:uppercase;letter-spacing:1px;color:#999}
+.sup-table td{padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.06)}
+.sup-table tr:hover{background:rgba(0,0,0,0.02)}
+.sup-risk-tag{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;padding:3px 10px;display:inline-block}
+.sup-risk-tag.超高風險{background:var(--rust);color:#fff}
+.sup-risk-tag.高風險{background:#D47A3A;color:#fff}
+.sup-risk-tag.中風險{background:#E6A817;color:#fff}
+.sup-risk-tag.低風險{background:var(--teal);color:#fff}
+.sup-detail{margin-top:8px;padding:16px;background:rgba(0,0,0,0.02);font-size:12px;line-height:1.6;display:none}
+.sup-detail.open{display:block}
+.sup-detail-item{padding:4px 0;border-bottom:1px solid rgba(0,0,0,0.04)}
+
+/* ══════ PAGE 5: INDUSTRIAL SAFETY ══════ */
+.is-scenario-btns{display:flex;gap:8px;margin-bottom:24px}
+.is-scenario-btn{padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid #ddd;
+  background:#fff;color:#666;font-family:'Noto Sans TC',sans-serif;transition:all .15s}
+.is-scenario-btn.active{border-color:var(--rust);background:var(--rust);color:#fff}
+.is-scenario-btn:hover:not(.active){border-color:#999}
+.is-map-container{width:100%;height:500px;margin-bottom:24px;position:relative;z-index:1}
+.is-params{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.is-param{background:var(--stone);padding:20px;text-align:center}
+.is-param-val{font-family:'DM Mono',monospace;font-size:28px;font-weight:700}
+.is-param-val.red{color:var(--rust)} .is-param-val.orange{color:#E67E22}
+.is-param-label{font-size:11px;color:#999;margin-top:4px}
+.is-legend{display:flex;align-items:center;gap:20px;padding:16px 0;border-top:1px solid #e0e0e0;
+  margin-bottom:32px;font-size:12px;color:#888}
+.is-legend-dot{width:16px;height:16px;border-radius:50%;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:6px}
+.is-formula{background:var(--stone);padding:24px;margin-bottom:32px;font-size:12px;line-height:1.8;color:#777}
+.is-formula-title{font-size:13px;font-weight:700;color:var(--charcoal-dark);margin-bottom:8px}
+.is-formula code{font-family:'DM Mono',monospace;background:rgba(0,0,0,0.04);padding:2px 6px;font-size:11px}
+
+/* ══════ PAGE 6: ESG FINANCIAL IMPACT ══════ */
+.fi-scenario-btns{display:flex;gap:8px;margin-bottom:32px}
+.fi-scenario-btn{padding:10px 24px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid #ddd;
+  background:#fff;color:#666;font-family:'Noto Sans TC',sans-serif;transition:all .15s}
+.fi-scenario-btn.active{border-color:var(--charcoal-dark);background:var(--charcoal-dark);color:#fff}
+.fi-scenario-btn:hover:not(.active){border-color:#999}
+.fi-kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:40px}
+.fi-kpi{background:var(--stone);padding:24px;text-align:center}
+.fi-kpi-val{font-family:'DM Mono',monospace;font-size:36px;font-weight:700;line-height:1}
+.fi-kpi-val.positive{color:var(--teal)} .fi-kpi-val.negative{color:var(--rust)} .fi-kpi-val.neutral{color:var(--charcoal-dark)}
+.fi-kpi-label{font-size:12px;color:#999;margin-top:6px}
+.fi-kpi-sub{font-family:'DM Mono',monospace;font-size:11px;color:#bbb;margin-top:4px}
+.fi-waterfall-wrap{margin:0 -8px 40px}
+.fi-waterfall-svg{width:100%;display:block}
+.fi-detail-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:40px}
+.fi-detail-card{background:var(--stone);padding:16px;border-left:4px solid #ddd;transition:all .15s}
+.fi-detail-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+.fi-detail-card-title{font-size:12px;font-weight:700;color:var(--charcoal-dark);margin-bottom:8px}
+.fi-detail-card-impact{font-family:'DM Mono',monospace;font-size:20px;font-weight:700;color:var(--rust)}
+.fi-detail-card-items{margin-top:8px;font-size:11px;color:#888;line-height:1.7}
+.fi-detail-card-prob{font-family:'DM Mono',monospace;font-size:10px;color:#aaa;margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.06)}
+.fi-formula{background:var(--stone);padding:20px 24px;margin-bottom:32px;font-size:12px;line-height:1.8;color:#888}
+.fi-formula code{font-family:'DM Mono',monospace;background:rgba(0,0,0,0.04);padding:2px 6px;font-size:11px}
+.fi-demo-tag{display:inline-block;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--rust);background:rgba(191,73,38,0.08);padding:3px 10px;margin-bottom:16px}
+
+@keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.ani{animation:fadeInUp .5s ease forwards;opacity:0} .d1{animation-delay:.1s} .d2{animation-delay:.2s} .d3{animation-delay:.3s}
+</style>
+</head>
+<body>
+
+<!-- ══════ SIDEBAR ══════ -->
+<div class="shell">
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-brand-sub">TCC Risk Intelligence</div>
+    <div class="nav-brand-name"><span>台泥</span>全球風險<br>預判系統</div>
+  </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" data-page="p3">
+      人權環境風險預判
+      <span class="nav-tab-num">01</span>
+    </div>
+    <div class="nav-tab" data-page="p5">
+      工業安全風險預判
+      <span class="nav-tab-num">02</span>
+    </div>
+    <div class="nav-tab" data-page="p4">
+      價值鏈風險預判
+      <span class="nav-tab-num">03</span>
+    </div>
+    <div class="nav-tab" data-page="p2">
+      輿情風險預判
+      <span class="nav-tab-num">04</span>
+    </div>
+    <div class="nav-tab" data-page="p1">
+      台泥網路聲量預判
+      <span class="nav-tab-num">05</span>
+    </div>
+    <div class="nav-tab" data-page="p6">
+      集團ESG風險財務衝擊量化
+      <span class="nav-tab-num">06</span>
+    </div>
+    <div class="nav-tab disabled">
+      氣候風險預判
+      <span class="nav-tab-num">07</span>
+    </div>
+  </div>
+  <div class="nav-footer">DEMO · 2026-03-25 提案版<br>永續辦公室 Sustainability Office</div>
+</nav>
+
+<!-- ══════ MAIN ══════ -->
+<div class="main">
+
+<!-- ═══ PAGE 1: BUBBLE ═══ -->
+<div class="page" id="p1">
+  <div class="header">
+    <div class="header-left">
+      <div class="section-label">Module 10 — Media Reach Quantification</div>
+      <h1 class="section-title">台泥網路聲量預判</h1>
+      <p class="section-subtitle">七層觸及估算模型 v3 — SimilarWeb × Inoreader × 群組去重</p>
+    </div>
+    <div class="header-right">
+      <div class="campaign-label">示範案例</div>
+      <div class="campaign-name">尼莫計畫校園徵才新聞稿</div>
+      <div class="campaign-date">2026-02-26 · 11 家媒體</div>
+    </div>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi-main">
+      <div class="kpi-main-label">去重後預估觸及</div>
+      <div class="kpi-main-value">20,999<span class="kpi-main-unit">人</span></div>
+      <div class="kpi-main-range">信心區間　1.0 – 3.1 萬人（±50%）</div>
+    </div>
+    <div class="kpi-details">
+      <div class="kpi-item"><div class="kpi-item-label"><span class="kpi-item-dot" style="background:var(--group-a)"></span>A 群 綜合入口</div><div class="kpi-item-value">11,949</div><div class="kpi-item-sub">4 家媒體 · overlap 40%</div></div>
+      <div class="kpi-item"><div class="kpi-item-label"><span class="kpi-item-dot" style="background:var(--group-b)"></span>B 群 財經投資</div><div class="kpi-item-value">6,704</div><div class="kpi-item-sub">3 家媒體 · overlap 25%</div></div>
+      <div class="kpi-item"><div class="kpi-item-label"><span class="kpi-item-dot" style="background:var(--group-d)"></span>D 群 主題類</div><div class="kpi-item-value">1,428</div><div class="kpi-item-sub">1 家媒體 · overlap 20%</div></div>
+      <div class="kpi-item"><div class="kpi-item-label"><span class="kpi-item-dot" style="background:var(--group-e)"></span>E 群 地方利基</div><div class="kpi-item-value">926</div><div class="kpi-item-sub">2 家媒體 · overlap 5%</div></div>
+    </div>
+  </div>
+  <div class="chart-section">
+    <div class="chart-wrapper"><svg id="bubbleChart"></svg></div>
+    <div class="bsidebar">
+      <div class="bsidebar-title">媒體群組明細</div>
+      <div id="legendContainer"></div>
+    </div>
+  </div>
+  <div class="method-note">
+    <span class="method-tag">Methodology</span>
+    <div class="method-text">
+      <strong>七層觸及估算模型 v3</strong>　基於 28 份 SimilarWeb 完整報告，經 Audience Overlap 實測驗證群內去重率。
+      模型公式：單篇觸及 = (月流量TW × PpV ÷ 30) ÷ 日發文數 × 層7修正因子。
+      跨群去重：P × (1 − ∏(1 − rate_g))，其中 P = 台灣網路新聞閱讀人口 15,912,000。
+      <strong>已知限制</strong>：跨群獨立性假設偏樂觀（A↔D 實測重疊 39.4%），實際觸及可能低 10-20%。
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 2: HEATMAP ═══ -->
+<div class="page" id="p2">
+  <div class="header">
+    <div>
+      <div class="section-label">Module 11 + Google Trends — Sentiment Monitoring</div>
+      <h1 class="section-title">媒體發文熱力圖 × 熱搜交叉比對</h1>
+      <p class="section-subtitle">Inoreader 全量擷取 × Google Trends 台灣過去 7 天熱搜排行</p>
+    </div>
+    <div class="header-right">
+      <div class="header-stat"><strong id="statTotal">—</strong> 篇文章</div>
+      <div class="header-stat" style="margin-top:4px"><strong id="statMedia">—</strong> 家媒體 · <span id="statRange"></span></div>
+      <div class="header-stat" style="margin-top:4px"><strong id="statTrends">—</strong> 組 Google 熱搜</div>
+    </div>
+  </div>
+  <div class="trends-bar"><div class="trends-label">Google Trends TW 7D</div><div class="trends-scroll" id="trendsScroll"></div></div>
+  <div class="hm-filters" id="hmFilters">
+    <button data-g="ALL" class="active">全部</button>
+    <button data-g="A">A群 綜合入口</button>
+    <button data-g="B">B群 財經投資</button>
+    <button data-g="C">C群 雜誌深度</button>
+    <button data-g="D">D群 主題類</button>
+    <button data-g="E">E群 地方利基</button>
+    <label class="hm-toggle"><input type="checkbox" id="showNums">顯示數字</label>
+  </div>
+  <div id="hmContent"></div>
+  <div class="legend-strip">
+    <span>0%</span>
+    <div class="legend-swatch" style="background:#f8f9fa"></div><div class="legend-swatch" style="background:#FFF3E0"></div>
+    <div class="legend-swatch" style="background:#FFE0B2"></div><div class="legend-swatch" style="background:#FFB74D"></div>
+    <div class="legend-swatch" style="background:#FF9800"></div><div class="legend-swatch" style="background:#E65100"></div>
+    <div class="legend-swatch" style="background:#BF360C"></div>
+    <span>30%+</span><span class="legend-sep">|</span>
+    <span style="color:#e67e22;font-weight:600">橘色 = 週末</span><span class="legend-sep">|</span>
+    <span>Hover 色塊 = 該時段新聞樣本 + 同期 Google 熱搜</span>
+  </div>
+  <div class="method-note">
+    <span class="method-tag">Data Sources</span>
+    <div class="method-text">
+      <strong>Inoreader Pro 全量擷取</strong>：29 家台灣主流媒體 × 20 天 RSS 文章，按發布時間戳記繪製熱力圖。
+      <strong>Google Trends 台灣</strong>：過去 7 天 772 組熱搜關鍵字，Hover 時顯示同期間最熱話題。
+      兩者交叉比對可揭示：哪些時段媒體發文最密集 × 民眾搜尋行為是否同步。
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 3: HRDD MATRIX ═══ -->
+<div class="page active" id="p3">
+  <div class="header">
+    <div>
+      <div class="section-label">Module 07 — CSDDD Human Rights Due Diligence</div>
+      <h1 class="section-title">人權與環境風險預判</h1>
+      <p class="section-subtitle">V-Dem × Freedom House × ITUC × ENCORE — 8 國 × 13 議題風險矩陣</p>
+    </div>
+    <div class="header-right">
+      <div class="header-stat"><strong>8</strong> 個營運國</div>
+      <div class="header-stat" style="margin-top:4px"><strong>13</strong> 項風險議題</div>
+      <div class="header-stat" style="margin-top:4px"><strong>4</strong> 個國際指標源</div>
+    </div>
+  </div>
+
+  <!-- Matrix heatmap -->
+  <div class="hrdd-matrix-wrap">
+    <table class="hrdd-matrix" id="hrddMatrix"></table>
+  </div>
+
+  <!-- Legend -->
+  <div class="hrdd-legend">
+    <span class="hrdd-legend-label">低風險</span>
+    <div class="hrdd-legend-bar"></div>
+    <span class="hrdd-legend-label">高風險</span>
+    <span class="hrdd-legend-note">數值 0–1（1 = 最高風險）· Hover 查看議題說明 · 國家依平均風險排序</span>
+  </div>
+
+  <!-- Risk bar detail -->
+  <div id="riskDetail" style="margin-bottom:40px"></div>
+
+  <div class="method-note">
+    <span class="method-tag">Indicators</span>
+    <div class="method-text">
+      <strong>ITUC Global Rights Index</strong>（工會權利）、
+      <strong>Freedom House</strong>（公民自由）、
+      <strong>V-Dem Exclusion Index</strong>（社會排除）、
+      <strong>ENCORE</strong>（環境依賴性）。
+      風險分數 0–1（1 = 最高風險），經標準化後按 13 項議題彙整。
+      <strong>點擊國家列</strong>可展開議題長條圖。
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 4: SUPPLIER RISK ═══ -->
+<div class="page" id="p4">
+  <div class="header">
+    <div>
+      <div class="section-label">Module 08 — Supply Chain ESG Violation Monitoring</div>
+      <h1 class="section-title">價值鏈風險預判</h1>
+      <p class="section-subtitle">勞動部裁罰資料 × 台泥供應商名單 — 模糊比對風險鑑別</p>
+    </div>
+    <div class="header-right">
+      <div class="header-stat"><strong>116</strong> 家供應商（去重）</div>
+      <div class="header-stat" style="margin-top:4px"><strong>66,982</strong> 筆裁罰紀錄</div>
+      <div class="header-stat" style="margin-top:4px"><strong>2020–2024</strong> 五年區間</div>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="sup-kpi">
+    <div class="sup-kpi-card"><div class="sup-kpi-val">116</div><div class="sup-kpi-label">去重供應商數</div></div>
+    <div class="sup-kpi-card"><div class="sup-kpi-val" style="color:var(--rust)">11</div><div class="sup-kpi-label">有裁罰紀錄</div></div>
+    <div class="sup-kpi-card"><div class="sup-kpi-val">20</div><div class="sup-kpi-label">比對到的違規筆數</div></div>
+    <div class="sup-kpi-card"><div class="sup-kpi-val">NT$3.0M</div><div class="sup-kpi-label">裁罰總額</div></div>
+  </div>
+
+  <!-- Risk Matrix -->
+  <div class="sup-matrix-wrap">
+    <div class="sup-matrix-title">供應商風險矩陣（頻率 × 嚴重程度）</div>
+    <div class="sup-matrix-axes"><svg class="sup-matrix-svg" id="supMatrixSvg"></svg></div>
+  </div>
+
+  <!-- Supplier table -->
+  <div class="sup-table-wrap">
+    <table class="sup-table" id="supTable"></table>
+  </div>
+
+  <div class="method-note" style="margin-top:40px">
+    <span class="method-tag">Methodology</span>
+    <div class="method-text">
+      <strong>資料源</strong>：勞動部違反勞動法令事業單位公告（66,982 筆，2020–2024）× 台泥台灣水泥廠供應商名單（229 家，含統編）。
+      <strong>比對方式</strong>：公司名稱核心字模糊匹配（因裁罰資料無統編欄位）。
+      <strong>風險計算</strong>：頻率分數（0–6）+ 嚴重程度分數（0–6）= 總分 → 風險等級。
+      <strong>已知限制</strong>：模糊比對精度有限（僅 11/116 命中），Module 08 正規劃以統編為 key 重新設計。
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 5: INDUSTRIAL SAFETY ═══ -->
+<div class="page" id="p5">
+  <div class="header">
+    <div>
+      <div class="section-label">Module 12 — Gaussian Dispersion + Probit Lethality Model</div>
+      <h1 class="section-title">工業安全風險預判</h1>
+      <p class="section-subtitle">HF 氣體擴散模型 × Probit 致死率函數 — 台南能元科技電池廠火災模擬</p>
+    </div>
+    <div class="header-right">
+      <div class="header-stat"><strong>3</strong> 種火災情境</div>
+      <div class="header-stat" style="margin-top:4px"><strong>Gaussian</strong> 擴散模型</div>
+      <div class="header-stat" style="margin-top:4px"><strong>Probit</strong> 致死率函數</div>
+    </div>
+  </div>
+
+  <!-- Scenario selector -->
+  <div class="is-scenario-btns" id="isScenarioBtns">
+    <div class="is-scenario-btn active" data-sc="A">A — 全區失火</div>
+    <div class="is-scenario-btn" data-sc="B">B — 單一防火分區</div>
+    <div class="is-scenario-btn" data-sc="C">C — 受控火災（最大規模）</div>
+  </div>
+
+  <!-- Params KPI -->
+  <div class="is-params" id="isParams"></div>
+
+  <!-- Map -->
+  <div class="is-map-container" id="isMap"></div>
+
+  <!-- Legend -->
+  <div class="is-legend">
+    <span><span class="is-legend-dot" style="background:rgba(255,0,0,0.5)"></span>50% 致死圈（紅色）</span>
+    <span><span class="is-legend-dot" style="background:rgba(255,165,0,0.4)"></span>1% 致死圈（橘色）</span>
+    <span><span class="is-legend-dot" style="background:#333"></span>火源位置（能元科技）</span>
+    <span style="margin-left:auto;font-size:11px;color:#bbb">底圖可切換街道/衛星 · 可縮放拖曳</span>
+  </div>
+
+  <!-- Formula -->
+  <div class="is-formula">
+    <div class="is-formula-title">物理模型公式</div>
+    <strong>HF 排放速率</strong>：<code>Q = Area × BurningFlux × F_content × ConversionRatio</code><br>
+    <strong>Gaussian 擴散</strong>：<code>C(x) = Q / (π × u × σy × σz)</code>，其中 σy, σz = Pasquill-Gifford 擴散參數<br>
+    <strong>Probit 致死率</strong>：<code>Pr = -8.4 + 1.0 × ln(C^1.5 × t)</code> → <code>P(death) = Φ(Pr - 5)</code><br>
+    <strong>參數</strong>：風速 5 m/s · 暴露時間 30 min · HF 含量 11.9% · 大氣穩定度 D 類
+  </div>
+
+  <div class="method-note">
+    <span class="method-tag">Application</span>
+    <div class="method-text">
+      <strong>用途</strong>：量化廠區火災的影響範圍，支援 HRDD 報告和 ESG 揭露。此原型已針對台南能元科技電池廠完成，計畫擴充至 TCC 全球廠區，涵蓋不同災害情境（火災、化學洩漏等）。
+      <strong>產出</strong>：致死半徑同心圓疊合衛星空照圖 → 直接輸出為互動式網頁供管理層決策參考。
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGE 6: ESG FINANCIAL IMPACT ═══ -->
+<div class="page" id="p6">
+  <div class="header">
+    <div>
+      <div class="section-label">Integrated Risk Monetization — Modules 01–05 Consolidated</div>
+      <h1 class="section-title">集團 ESG 風險財務衝擊量化</h1>
+      <p class="section-subtitle">五大風險模組 × 機率 × 嚴重度 × 貨幣化 → 反映財報衝擊</p>
+    </div>
+    <div class="header-right">
+      <div class="header-stat"><strong>1,546</strong> 億營收基線</div>
+      <div class="header-stat" style="margin-top:4px"><strong>112.6</strong> 億稅後淨利</div>
+      <div class="header-stat" style="margin-top:4px"><strong>2024</strong> 財報年度</div>
+    </div>
+  </div>
+
+  <div class="fi-demo-tag">⚠ 示意概念 — 實際數字需各部門協作校準</div>
+
+  <!-- Scenario selector -->
+  <div class="fi-scenario-btns" id="fiScBtns">
+    <div class="fi-scenario-btn active" data-sc="base">基準情境 BAU</div>
+    <div class="fi-scenario-btn" data-sc="mid">中度衝擊情境</div>
+    <div class="fi-scenario-btn" data-sc="extreme">極端情境</div>
+  </div>
+
+  <!-- KPI row -->
+  <div class="fi-kpi-row" id="fiKpi"></div>
+
+  <!-- Waterfall chart -->
+  <div class="fi-waterfall-wrap">
+    <svg class="fi-waterfall-svg" id="fiWaterfall"></svg>
+  </div>
+
+  <!-- Risk detail cards -->
+  <div class="fi-detail-grid" id="fiDetails"></div>
+
+  <!-- Formula -->
+  <div class="fi-formula">
+    <strong>量化公式</strong>：<code>財務衝擊 = Σ (風險機率 × 衝擊嚴重度 × 貨幣化因子)</code><br>
+    <strong>風險機率</strong>：來自 Module 01–05 各模組的風險評分，轉換為年化發生機率<br>
+    <strong>衝擊嚴重度</strong>：營收損失 + 成本增加 + 資產減損 + 融資成本上升<br>
+    <strong>貨幣化因子</strong>：依台泥 2024 財報基線（營收 1,546 億 / 淨利 112.6 億 / 毛利率 21%）<br>
+    <strong>情境分析</strong>：參照 TCFD / ISSB IFRS S2 情境分析框架，分基準/中度/極端三情境
+  </div>
+
+  <div class="method-note">
+    <span class="method-tag">Framework</span>
+    <div class="method-text">
+      <strong>TCFD / ISSB IFRS S2</strong>：風險量化需轉譯為財務科目影響（營收/成本/資產/融資）。
+      <strong>Sustainalytics ESG Risk Ratings</strong>：unmanaged risk = exposure × (1 − management score)。
+      <strong>本頁定位</strong>：示意如何將 Module 01–05 的風險評分整合為董事會可用的財務決策資訊。
+      實際部署需各事業群提供具體營運數據 + 精算師/財務團隊校準貨幣化參數。
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- Tooltips -->
+<div class="tooltip" id="tooltip"></div>
+<div class="tip" id="tip"></div>
+
+<script>
+// ══════ NAV SWITCHING ══════
+let bubbleRendered = false;
+document.querySelectorAll('.nav-tab:not(.disabled)').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const pageId = tab.dataset.page;
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    // Re-render bubble if switching to p1 (needs correct dimensions)
+    if (pageId === 'p1' && bubbleRendered) setTimeout(renderBubble, 50);
+  });
+});
+
+// ══════ PAGE 1: BUBBLE ══════
+const bubbleArticles = [
+  {media:'聯合新聞網',domain:'udn.com',group:'A',reach:5350,visits:39013983,dedup:5392412,ppv:2.60,daily:632,tier:1},
+  {media:'中時新聞網',domain:'chinatimes.com',group:'A',reach:4887,visits:17295120,dedup:2382883,ppv:3.23,daily:381,tier:1},
+  {media:'中央社',domain:'cna.com.tw',group:'A',reach:3921,visits:12697449,dedup:4205972,ppv:2.14,daily:231,tier:1},
+  {media:'NOWnews',domain:'nownews.com',group:'A',reach:2191,visits:12727600,dedup:3641560,ppv:1.55,daily:300,tier:2},
+  {media:'工商時報',domain:'ctee.com.tw',group:'B',reach:2894,visits:8483442,dedup:3037469,ppv:1.74,daily:170,tier:1},
+  {media:'鉅亨網',domain:'cnyes.com',group:'B',reach:2885,visits:12778194,dedup:2391527,ppv:2.31,daily:341,tier:1},
+  {media:'MoneyDJ',domain:'moneydj.com',group:'B',reach:2196,visits:6720002,dedup:1351746,ppv:3.04,daily:310,tier:2},
+  {media:'鏡新聞',domain:'mirrormedia.mg',group:'D',reach:1428,visits:12008724,dedup:4347271,ppv:1.82,daily:510,tier:1},
+  {media:'臺灣時報',domain:'taiwantimes.com.tw',group:'E',reach:475,visits:190000,dedup:47500,ppv:1.5,daily:20,tier:3},
+  {media:'安傳媒',domain:'annewsmedia.com',group:'E',reach:475,visits:95000,dedup:23750,ppv:1.5,daily:10,tier:3},
+];
+const groupMeta = {
+  A:{name:'綜合入口',color:'#BF4926',overlap:'40%'},
+  B:{name:'財經投資',color:'#007EA7',overlap:'25%'},
+  D:{name:'主題類媒體',color:'#D4705A',overlap:'20%'},
+  E:{name:'地方／利基',color:'#8B8B8B',overlap:'5%'},
+};
+
+// Legend
+const lc = document.getElementById('legendContainer');
+for(const[gK,gM] of Object.entries(groupMeta)){
+  const ga = bubbleArticles.filter(a=>a.group===gK);
+  const d = document.createElement('div'); d.className='legend-group';
+  d.innerHTML=`<div class="legend-group-header"><span class="legend-dot" style="background:${gM.color}"></span><span class="legend-group-name">${gK} 群　${gM.name}</span><span class="legend-group-overlap">ō ${gM.overlap}</span></div><ul class="legend-media-list">${ga.map(a=>`<li class="legend-media-item"><span>${a.media}</span><span class="legend-media-reach">${a.reach.toLocaleString()}</span></li>`).join('')}</ul>`;
+  lc.appendChild(d);
+}
+
+// Bubble chart
+const bSvg = d3.select('#bubbleChart');
+const bWrap = document.querySelector('.chart-wrapper');
+function renderBubble(){
+  bSvg.selectAll('*').remove();
+  const W=bWrap.clientWidth, H=bWrap.clientHeight;
+  bSvg.attr('viewBox',`0 0 ${W} ${H}`);
+  const rS=d3.scaleSqrt().domain([0,d3.max(bubbleArticles,d=>d.reach)]).range([20,Math.min(W,H)*0.16]);
+  const gC={A:{x:W*.3,y:H*.42},B:{x:W*.65,y:H*.38},D:{x:W*.52,y:H*.72},E:{x:W*.82,y:H*.7}};
+  const nodes=bubbleArticles.map(d=>({...d,r:rS(d.reach),x:gC[d.group].x+(Math.random()-.5)*40,y:gC[d.group].y+(Math.random()-.5)*40}));
+  const sim=d3.forceSimulation(nodes).force('x',d3.forceX(d=>gC[d.group].x).strength(.12)).force('y',d3.forceY(d=>gC[d.group].y).strength(.12)).force('collide',d3.forceCollide(d=>d.r+3).strength(.9)).force('charge',d3.forceManyBody().strength(-5)).stop();
+  for(let i=0;i<300;i++)sim.tick();
+  [{group:'A',label:'A 群'},{group:'B',label:'B 群'},{group:'D',label:'D 群'},{group:'E',label:'E 群'}].forEach(d=>{
+    bSvg.append('text').attr('x',gC[d.group].x).attr('y',gC[d.group].y-(d.group==='A'?100:d.group==='B'?85:55))
+      .attr('text-anchor','middle').attr('fill',groupMeta[d.group].color).attr('opacity',.15)
+      .attr('font-family','Noto Sans TC').attr('font-size',W<700?'28px':'36px').attr('font-weight','900').text(d.label);
+  });
+  const bg=bSvg.selectAll('.bubble').data(nodes).join('g').attr('class','bubble').attr('transform',d=>`translate(${d.x},${d.y})`).style('cursor','pointer');
+  bg.append('circle').attr('r',0).attr('fill',d=>groupMeta[d.group].color).attr('opacity',.88).attr('stroke',d=>groupMeta[d.group].color).attr('stroke-width',1.5).attr('stroke-opacity',.3)
+    .transition().duration(800).delay((_,i)=>i*60).ease(d3.easeElasticOut.amplitude(1).period(.5)).attr('r',d=>d.r);
+  bg.each(function(d){const g=d3.select(this),fs=Math.max(10,d.r*.28),rfs=Math.max(8,d.r*.22);
+    if(d.r>25)g.append('text').attr('class','bubble-label').attr('y',d.r>40?-rfs*.5:0).attr('font-size',fs+'px').text(d.media).attr('opacity',0).transition().delay(800).duration(400).attr('opacity',1);
+    if(d.r>40)g.append('text').attr('class','bubble-reach-label').attr('y',rfs*1.1).attr('font-size',rfs+'px').text(d.reach.toLocaleString()+' 人').attr('opacity',0).transition().delay(900).duration(400).attr('opacity',.7);
+  });
+  const tt=document.getElementById('tooltip');
+  bg.on('mouseenter',function(_,d){d3.select(this).select('circle').transition().duration(200).attr('opacity',1).attr('stroke-width',3).attr('stroke-opacity',.6);
+    const gi=groupMeta[d.group];
+    tt.innerHTML=`<div class="tooltip-media"><span class="tooltip-dot" style="background:${gi.color}"></span>${d.media}</div><div class="tooltip-row"><span class="tooltip-label">群組</span><span class="tooltip-value">${d.group} 群 ${gi.name}</span></div><hr class="tooltip-divider"><div class="tooltip-row"><span class="tooltip-label">單篇預估觸及</span><span class="tooltip-value">${d.reach.toLocaleString()} 人</span></div><div class="tooltip-row"><span class="tooltip-label">月流量 (TW)</span><span class="tooltip-value">${(d.visits/1e6).toFixed(1)}M</span></div><div class="tooltip-row"><span class="tooltip-label">去重受眾 (TW)</span><span class="tooltip-value">${(d.dedup/1e6).toFixed(1)}M</span></div><div class="tooltip-row"><span class="tooltip-label">日發文數</span><span class="tooltip-value">${d.daily}</span></div><div class="tooltip-row"><span class="tooltip-label">PpV</span><span class="tooltip-value">${d.ppv.toFixed(2)}</span></div>`;
+    tt.classList.add('active');
+  }).on('mousemove',function(e){const p=16;let x=e.clientX+p,y=e.clientY-20;const r=tt.getBoundingClientRect();if(x+r.width>window.innerWidth-p)x=e.clientX-r.width-p;if(y+r.height>window.innerHeight-p)y=e.clientY-r.height-p;tt.style.left=x+'px';tt.style.top=y+'px';
+  }).on('mouseleave',function(){d3.select(this).select('circle').transition().duration(200).attr('opacity',.88).attr('stroke-width',1.5).attr('stroke-opacity',.3);tt.classList.remove('active');});
+}
+// Lazy init bubble when p1 becomes visible
+let bubbleInited=false;
+new MutationObserver(()=>{if(document.getElementById('p1').classList.contains('active')&&!bubbleInited){bubbleInited=true;setTimeout(renderBubble,100);}
+}).observe(document.getElementById('p1'),{attributes:true,attributeFilter:['class']});
+bubbleRendered=true;
+window.addEventListener('resize',()=>{if(document.getElementById('p1').classList.contains('active'))renderBubble();});
+
+// ══════ PAGE 2: HEATMAP ══════
+const RAW = {"h":[{"n":"聯合新聞網","d":"udn.com","g":"A","gl":"綜合入口","ta":17817,"dc":20,"mp":[[11.2,3.0,2.7,0.7,0.3,1.0,0.6,1.7,3.1,4.6,3.7,5.5,7.8,4.0,6.6,7.7,7.9,7.9,5.6,5.0,2.9,3.0,2.0,1.4],[11.6,3.6,1.6,0.1,1.1,0.5,0.4,0.9,3.0,5.2,7.3,9.5,7.2,2.7,6.8,8.5,7.8,6.8,4.1,3.7,1.9,2.5,1.7,1.3],[11.9,2.0,1.9,0.4,0.2,0.7,0.8,2.0,3.6,5.5,8.4,6.5,8.4,5.8,6.2,7.7,5.6,6.1,4.6,3.8,2.5,2.7,1.9,0.9],[4.2,2.0,1.2,0.7,0.2,0.7,0.7,1.7,2.9,4.5,7.3,8.3,7.8,6.5,8.8,8.0,6.9,8.1,5.6,4.0,4.2,3.1,1.7,0.5],[7.7,3.5,1.9,0.7,0.4,0.6,1.1,2.2,3.1,4.7,5.6,8.2,7.6,5.6,7.7,7.4,6.1,6.7,5.3,4.5,3.3,2.9,2.1,1.1],[14.0,3.7,1.7,0.9,0.1,1.4,2.8,1.9,3.9,4.4,5.1,8.5,7.2,5.9,6.5,4.5,5.9,5.4,5.3,3.5,3.4,2.2,1.4,0.5],[11.8,2.9,4.1,0.3,0.3,0.5,0.2,1.5,2.9,5.0,6.9,7.4,8.2,5.9,10.5,6.4,4.5,2.8,4.1,3.3,2.6,2.6,4.3,1.0]],"mr":[[312,83,75,19,9,29,16,48,86,129,103,155,219,113,184,216,222,221,156,140,80,84,57,38],[339,106,48,2,31,16,13,27,89,151,215,278,210,80,199,248,229,199,121,109,56,73,51,39],[337,56,55,11,5,20,24,57,101,157,239,183,239,163,176,219,158,172,130,108,70,76,53,25],[135,65,38,23,6,22,21,53,93,144,232,265,249,207,281,254,220,258,178,128,135,99,55,17],[233,105,57,21,13,17,34,67,93,143,168,249,230,169,233,223,183,204,160,137,100,87,64,33],[246,65,30,15,2,25,49,34,69,77,90,150,126,104,114,79,103,95,93,61,59,39,24,9],[153,38,53,4,4,7,3,19,38,65,90,96,107,77,136,83,59,36,53,43,34,34,56,13]],"dt":[2794,2929,2834,3178,3023,1758,1301],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"21":["前助理涉美濃大峽谷爭議  朱信強宣布退出市議員選戰","月蘭獎百萬獎學金 助22名弱勢學童追夢"],"20":["今彩539第115072期開獎","Mukasa白色瑜珈點亮文心森林公園 傳遞純淨正能量"],"19":["中職／把國家隊交給更可靠的學弟 陳冠宇要拚複數年約投到40歲","中東戰火第4周…伊朗官媒：納坦茲核設施遭空襲 暫無輻射外洩"],"18":["賴清德提核三重啟 周春米：地方訴求就是安全、安全、再安全","賴總統提核三重啟 周春米：地方訴求就是安全、安全、再安全"],"17":["中油吸收7成5穩物價 汽、柴油價格各調漲1.8元及1.4元","AI、半導體攬才無極限 南亞新廠釋出1500個職缺、年薪中位數破百萬"],"16":["MLB／守護者雙投涉操縱投球 大聯盟將暫停支薪","藝術家夫妻檔許朝陽、張玉珍 南科新港社地方文化館連袂展出"],"15":["10個月拚到位！台南亞太成棒主球場中職認證過關 迎一軍賽事","八旗總編富察被捕滿3年 人權工作者李明哲：刑滿後能否回台難預料"],"14":["NBA／活塞率先闖進東區季後賽 塞爾蒂克逆轉灰熊","童現草莓舌當心猩紅熱 醫：未治恐併發心臟病"],"13":["健身教練服用非法「增肌神藥」喪失性功能、還有人失去生育能力","賴總統拋核二、三可重啟 葛如鈞：真的要就別再拖"],"12":["核二、核三具備重啟條件！賴總統：月底重啟計畫送核安會審議","健康幣喊卡待整合 陳菁徽肯定：提醒衛福部要說明三大問題"],"11":["6旬翁闖牙醫診所行竊 假裝「借廁所」仍被清潔工識破報警","能源危機曾催生十大建設 蔣萬安：值得中央借鑑"],"10":["不用年年插秧就能連續收穫？大陸找到「長壽水稻」基因 登國際期刊","伊朗擴大戰線至4000公里外印度洋！首射中程飛彈攻擊美英聯合基地"],"9":["原物料狂飆平民小吃也撐不住 台南知名豆花老店公告調漲","連江十載硬道開跑 北竿硬地超級馬拉松吸引1818人挑戰"],"8":["俄國開交換條件！俄不幫伊朗換美不幫烏克蘭 白宮特使當場回應曝光","提升光復鄉防災韌性 內政部：中央挹注縣府11.41億落實排水防汛"],"7":["怎麼努力都沒用？《長女病》張慧慈用優勢翻轉階級落差","教師退場／轉行養豬變網紅 資深師：至少豬不會投訴我"],"6":["內塔尼亞胡：伊朗正被徹底摧毀","川普政府告哈佛大學 控校方縱容反猶示威釀敵意校園"],"5":["【總編開箱】沒了「2027武統論」稻草人  賴政府抗中大戲怎搬演下去？","神經內分泌瘤是什麼？圖解好發部位、9大症狀 為何一般拖了6年才會發覺"],"4":["影／涉詐千萬助理費 北市議員李傅中武凌晨移送北檢 臉上神情凝重","兩棲攻擊艦拳師號領軍出動 美增派數千部隊趕赴中東"],"3":["橘世代／【關於繼承──無產階級篇】無產媽媽心聲…顧好自己 就是幫孩子減少負擔","橘世代／【關於繼承──無產階級篇】學習自我理財…評估風險 也盤點父母長照需求"],"2":["橘世代／【關於繼承──無產階級篇】階級落差 自己掌控命運","科普好健康／帶狀疱疹引發神經痛…逾50歲罹患率增 疫苗可預防"],"1":["聯合報社論／律師被打、要犯潛逃，司法部門都無動於衷","憂能源危機 歐股挫跌"],"0":["六利多防護 長線有撐","川高會 喊維護台海和平 美日領袖聚焦區域安全、全球繁榮"],"23":["台聚、亞聚法說會／HDPE、LLDPE 利差改善 惟 EVA 全年仍供過於求","台聚、亞聚法說會／戰事擾動供應鏈 估至4月底供貨無虞 國內產業優先"],"22":["東超／落後16分到大勝26分 領航猿輕取東京電擊連兩年晉級冠軍賽","花蓮近海晚間連2震 氣象署：未來3天內防規模4.5餘震"]}},{"n":"自由時報","d":"ltn.com.tw","g":"A","gl":"綜合入口","ta":15673,"dc":20,"mp":[[0.9,0.6,0.1,0.8,0.2,1.9,1.8,3.5,4.1,8.3,8.2,4.0,6.6,6.7,5.6,6.8,8.9,6.6,6.2,5.1,4.4,5.0,3.2,0.6],[0.4,0.6,0.2,0.8,0.1,2.0,1.3,2.3,1.5,8.2,7.3,10.2,8.3,4.8,5.2,9.2,11.2,7.3,4.5,4.0,4.5,2.8,2.2,1.2],[0.9,0.3,0.1,0.7,0.1,1.3,1.9,3.6,3.8,7.1,7.9,9.0,7.0,7.1,5.2,6.8,8.6,6.6,6.1,5.0,3.8,3.3,2.5,1.3],[0.6,0.2,0.3,0.9,0.2,1.4,2.4,3.1,4.4,4.6,8.6,8.6,7.6,6.9,7.4,6.9,8.8,5.7,5.8,4.2,4.4,3.4,2.6,0.8],[0.4,0.5,0.0,1.1,0.3,1.9,1.7,3.4,4.1,7.5,8.8,7.6,6.2,6.4,7.8,6.0,8.2,6.2,5.7,4.4,4.3,3.4,2.9,1.0],[0.3,0.1,0.1,0.8,0.8,3.3,1.9,3.7,3.9,7.8,9.2,8.1,7.7,7.3,6.3,4.5,6.4,6.4,5.3,4.0,5.6,2.9,2.2,1.4],[0.8,0.2,0.2,1.5,0.2,1.8,1.1,2.0,3.6,7.9,7.1,9.7,7.7,5.7,6.5,7.7,7.6,4.7,5.4,4.6,4.4,4.2,4.0,1.6]],"mr":[[18,12,3,16,5,39,37,72,85,173,171,83,138,140,117,142,185,137,129,106,91,105,66,13],[10,15,5,18,2,46,29,53,34,190,168,236,191,112,121,213,260,169,104,93,103,65,50,27],[27,9,4,20,2,37,54,104,109,206,229,261,202,207,151,197,249,191,177,144,110,95,72,39],[17,6,9,25,7,41,69,88,126,132,245,246,216,198,211,198,252,162,165,120,126,97,75,23],[9,12,1,27,8,45,42,82,98,180,213,184,150,155,188,144,198,150,137,106,103,83,70,25],[6,2,1,15,14,60,34,66,71,140,167,147,139,131,113,82,115,116,95,72,101,53,40,26],[10,3,2,19,3,24,14,26,47,103,93,127,101,75,85,101,99,61,71,60,57,55,53,21]],"dt":[2083,2314,2896,2854,2410,1806,1310],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"21":["老字號工具廠轉型 昇揚金屬10億新廠拚國際市場","美日峰會另類焦點「抵嘉」  這雙襪子超搶鏡"],"20":["台積電加持  台中就博會逾5000人參與、媒合率達6成","核三重啟  行政院：完成安檢取得執照方可啟動"],"19":["李四川談新北大巨蛋選址條件  戴瑋姍轟不及格：曝露對市政無知","泰國60天免簽違法濫用頻傳 擬砍半縮為30天嚴審"],"18":["UBA》參加柯瑞訓練營意義非凡  王威翔「殺死比賽」比出偶像招牌手勢","中職》和另一轉隊主角林岱安相擁 江少慶今年笑容變多了"],"17":["UBA》健行吞3連敗恐中斷連10年4強！劉孟竹：球員太容易鬆懈","貓咪變國家級寵物  泰國宣布5種貓星人成「國家象徵」"],"16":["日職》首打席跑壘摔倒引關注 林安可2支0、中斷熱身賽連4場敲安","新竹市府與龍來解約 曾資程憂新竹棒球場面臨更多工程履約爭議"],"15":["唱紅《咒術迴戰》主題曲 日本歌手來大港先嗑臭豆腐","老本快被挖光！擁1200萬全告訴兒子  公務員阿北被情勒悲劇了"],"14":["世界最重要公司在台灣！外媒點名曝左右全球經濟關鍵真相","「台派辦桌」最大場 上千人齊享本土味佳餚"],"13":["國民黨內初選3/25啟動民調 徐欣瑩再打「萬事安欣」牌","苗栗家扶頒發416萬獎助學金 293名學子享溫馨"],"12":["桃園新屋台31線路旁溝渠堵塞影響農作灌溉 中壢工務段允儘快清淤","藍白砍光20萬架國產無人機預算 民進黨：造成台灣戰力破口"],"11":["李傅中武涉詐助理費 張育萌質疑妻借出千萬「債務人消失」超怪","O型血告急！ 台中剩2.9天 清明連假將至恐更吃緊"],"10":["氣象署發布中度磁暴警示！影響約15小時  衛星導航、無線電恐短暫中斷","吳中純今告別式！不捨癌逝愛妻 梅聖旻哽咽落淚：不會忘了妳"],"9":["文旦開花期當心小黃薊馬！ 農改場提5大防治要點","無懼遭伊朗多次攻擊  阿聯2700億元緊急向美採購薩德雷達丶各式飛彈"],"8":["7-11找子瑜代言給錯圖？TWICE社群貼海報竟出現「USP待補」","兵役體位標準修正 內政部：複檢機制、勤務安排達共識"],"7":["台東東河晚崙西亞東河馬拉松開跑 近千跑者人數創新高","MLB》春訓狂敲3轟打擊率破3成！洋基前大物「火星人」仍確定3A開季"],"6":["NBA東部龍頭活塞戰勇士、HBL四強戰 今日賽事預告與轉播","南投名間焚化爐爭議升溫 温世政提 「複合療法」解方"],"5":["伊朗滲透以軍「鐵穹」防空部隊 以色列抓到洩密內鬼","全球債市遭大拋售英國淪重災區  10年期公債殖利率飆至2008年以來新高"],"4":["裝修蟑螂盯上交屋潮 住保履約機制介入 終結爛尾工程亂象","【台中】金融大道成形！文心路四段機能成熟　房市盤整期逆勢吸睛"],"3":["《TAIPEI TIMES》  Military planning to buy hundreds ","《TAIPEI TIMES》 Smart City Summit and Expo opens in"],"1":["憂能源危機　歐股挫跌","伊朗加強攻擊能源設施引憂心　歐股收挫逾2%"],"0":["李傅中武涉詐領助理費 「人頭助理」親友移送北檢","新北中和工廠深夜大火　火勢控制疏散24人"],"23":["蘆竹遊覽車撞路邊大貨車慘況曝！19女移工受傷 2騎士衰遭波及","花蓮近海連2震 氣象署：未來3天內防規模4.5餘震"],"22":["東超季後賽》阿提諾猛砍26分、11籃板 領航猿大逆轉東京電擊闖冠軍戰","顏值強到炸裂！18歲女偶像回眸「狂吸800萬人」美貌獲讚神選之子"],"2":["川普：延遲訪中一個半月　期待出訪","拖吊流氓集團不法獲利逾百萬　北檢聲押禁見2嫌"]}},{"n":"中時新聞網","d":"chinatimes.com","g":"A","gl":"綜合入口","ta":9679,"dc":20,"mp":[[1.5,0.1,0.0,0.0,0.0,0.7,2.0,1.5,5.0,6.8,8.4,3.9,8.3,10.5,5.3,8.8,11.3,6.6,4.6,3.7,3.4,3.8,2.5,1.2],[1.5,0.0,0.1,0.0,0.0,1.0,0.6,1.3,1.4,7.7,6.5,9.2,10.7,6.6,5.9,9.2,11.7,9.2,4.7,2.5,3.9,2.6,2.3,1.4],[1.3,0.2,0.1,0.0,0.1,0.3,0.6,2.3,4.4,5.7,7.0,9.2,9.8,8.8,5.6,6.6,9.2,6.5,5.8,4.8,3.2,2.6,3.3,2.7],[1.6,0.2,0.0,0.1,0.0,0.1,2.3,1.8,4.3,3.3,7.7,9.1,8.6,7.7,7.8,8.3,8.7,8.2,4.0,4.3,3.5,3.4,2.5,2.5],[1.1,0.1,0.1,0.1,0.0,0.8,2.2,1.5,5.1,5.5,6.4,8.8,8.7,7.2,7.2,8.5,8.9,8.7,4.7,4.0,2.6,2.8,2.7,2.4],[1.3,0.3,0.2,0.2,0.0,1.0,2.0,2.1,5.3,5.9,6.3,7.8,8.3,8.4,6.9,7.6,7.9,6.3,4.5,5.6,4.0,3.1,2.8,2.4],[1.4,0.3,0.2,0.6,0.2,1.5,1.8,1.8,4.1,6.0,5.9,8.6,9.5,8.6,8.6,10.1,6.0,4.4,3.6,4.1,3.9,3.5,3.5,2.4]],"mr":[[20,1,0,0,0,9,26,20,65,88,109,51,108,136,69,114,147,86,60,48,44,50,32,16],[22,0,1,0,0,15,9,19,21,111,94,133,155,96,86,133,169,134,68,36,57,37,33,21],[24,3,1,0,1,6,11,43,82,105,129,171,181,163,104,122,170,120,107,88,60,49,61,50],[30,4,0,1,0,2,42,33,79,60,141,168,158,142,144,153,160,150,73,79,65,63,46,46],[17,2,1,2,0,12,34,24,80,85,99,137,135,113,112,132,138,136,73,63,40,44,42,38],[13,3,2,2,0,10,20,21,54,60,64,79,84,85,70,77,80,64,46,57,41,31,28,24],[9,2,1,4,1,10,12,12,27,40,39,57,63,57,57,67,40,29,24,27,26,23,23,16]],"dt":[1299,1450,1851,1839,1559,1015,666],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"21":["川伯點大巨蛋選址3條件被戴瑋姍批「無知」 江怡臻反擊「無知又翻車」","核電重啟神主牌崩解 廖偉翔、羅廷瑋怒轟：誰為用肺發電道歉"],"20":["TPBL》中信特攻主場下起三分雨 輕鬆擊退海神止敗","賴清德談核能遭在野抨擊 民進黨：重啟核電3前提未變"],"19":["春分就要這味！新北春紛節 聽歌、吃美食超 chill","賴清德要重啟核電 廢核平台狠批：堅決反對一意孤行"],"18":["前福斯新聞主播：美國不會協防台灣 方恩格這麼說","李珠珢韓職離隊首發聲！認了今年：有段時間暫時休息"],"17":["HBL》陽明突破「魔咒」 睽違17季再闖冠軍賽","嘉義市長選戰白營拚藍白合 柯文哲推「跨黨站台」"],"16":["台中太平路口驚魂！兩車對撞 波及路邊7汽機車","近視！F-35戰機缺雷達也要接收 美軍到底怎麼了"],"15":["賴宣示重啟核二核三 蔣萬安批非核政策錯誤：要不要還專家公道","花蓮地院、地檢門口驚見不明包裹　防爆小組「拆彈」傻眼了"],"14":["南部醫療成果傲視全台！石崇良：強化深耕及健保改革","盧秀燕訪美壓軸訪美西雙城 交流社宅、交通政策"],"13":["李珠珢未在韓職LG雙子啦啦隊名單！粉絲：all in台灣？","槌球高手過招！竹南鎮長盃熱鬧登場 長者齊聚揮桿"],"12":["前少林寺住持釋永信被提起公訴 涉嫌職務侵佔等4罪","立委莊瑞雄服務處遭怪男闖入翻箱倒櫃 喊「王爺派我來的」遭活逮"],"11":["拳擊》林郁婷重返賽場 月底出征亞錦賽","尋找調酒新星！「2026 MONIN CUP國際調酒大賽」 台灣區賽事熱烈報名中"],"10":["川習會推遲 陸委會：中方藉元首外交鞏固「國際一中」","《生醫股》健亞詳解易威換股案 打造「美台合作」生技艦隊"],"9":["宜蘭縣長看好藍白合 陳鳳馨曝林國漳、吳宗憲「差在這一點」","桃園男騎士喝酒毒駕拒檢市區狂竄 警口袋戰術逮活逮"],"8":["周杰倫半夜發新專輯預告吊胃口 昆凌心疼粉絲出手了","陸駐柬埔寨大使稱瀾湄合作展示旺盛生命力"],"7":["NBA》冠軍隊又不去白宮見川普了 雷霆聲明「時機不合適」","馬祖雲台操演震撼射擊 綿密火網衛北疆 導入TAK系統與無人機偵蒐"],"6":["人師變狼師！強吻摸胸還伸舌頭 北市代理師辯「關心」遭判8月","交友軟體約會小女生 男大生「合意性交」仍慘了！判決出爐"],"5":["能源供應受阻！道瓊重挫443點、台積電ADR跌2.82％","深夜不歸、機車環抱！人妻怒揪老公偷吃女會計 法院判賠金額曝光"],"3":["中和印刷工廠大火 疏散24人無人受困","清大人社男稱理組「無知的豬」引爆文理大戰 理科生回嗆：自卑出優越感"],"2":["包商欠75萬不還 下游廠商出一招「嚇到水利局幫忙討債」秒簽同意書","小七「包手89猴店員」包裹刷完當垃圾扔遭炎上 7-11回應了"],"1":["不用廚餘機 他推1招剩食處理神招「不臭也沒蟲」 大票人驚：長知識","拖吊蟑螂首腦「小崔」狼狽落網 記者問一句觀眾笑翻"],"0":["中東戰火逼高油價 消費者企業怎麼辦？IEA給3對策","F-35隱形戰機不可能被打中？張延廷爆專業看法"],"23":["李貞秀發言 官員不理？沈富雄：不只欺負陸配 這是藐視國會","快訊》中和公寓3樓竄火煙 48車95人灌救防延燒"],"22":["李小龍一生的勁敵！好萊塢巨星羅禮士病逝　享壽86歲","與法國總統外事顧問溝通中東局勢 王毅提3個當務之急"],"4":["台鐵深夜驚傳死傷！60歲男突闖內壢平交道遭區間車撞飛命危","中東鏖戰》伊朗總統道歉有用？川普回應何以異常強硬？"]}},{"n":"三立新聞網","d":"setn.com","g":"A","gl":"綜合入口","ta":8162,"dc":20,"mp":[[1.7,3.9,1.5,0.3,0.4,2.5,3.6,3.3,4.4,5.6,8.8,3.1,5.7,7.3,3.9,6.7,9.7,7.0,5.3,4.2,3.9,3.6,2.7,0.7],[1.6,1.6,0.7,0.4,1.0,2.7,2.5,2.6,1.5,6.8,6.5,10.4,8.1,4.6,4.3,8.9,8.7,7.2,5.4,3.4,4.6,3.2,2.0,1.2],[1.9,2.9,0.9,0.3,0.2,1.2,3.7,4.0,4.6,6.3,7.8,8.1,8.3,6.3,5.3,5.6,6.3,6.9,5.4,3.8,3.0,2.5,3.0,1.6],[1.3,0.8,0.6,0.6,0.7,1.4,3.1,2.1,4.1,3.9,8.0,8.7,7.0,6.1,7.3,8.9,7.7,7.7,5.3,3.0,3.6,3.7,2.7,1.8],[1.1,1.1,0.2,0.6,0.8,1.2,2.6,2.6,3.8,5.0,8.5,8.9,7.2,6.0,5.8,7.8,7.9,6.1,5.7,4.4,3.5,3.8,3.5,2.1],[1.9,2.0,0.1,1.4,0.4,1.6,1.6,2.1,4.7,6.4,8.8,9.1,8.1,6.9,3.8,4.6,7.3,7.4,5.6,3.7,4.0,3.4,3.2,2.0],[1.9,3.6,0.1,0.6,0.1,2.4,1.1,1.2,3.2,6.9,8.3,6.9,6.5,6.1,6.1,9.0,7.2,5.0,5.4,4.6,3.7,4.8,4.0,1.2]],"mr":[[18,41,16,3,4,26,37,34,46,58,91,32,59,76,41,70,101,73,55,44,41,37,28,7],[20,20,9,5,12,33,30,32,18,83,80,127,99,56,53,109,107,88,66,42,56,39,25,15],[28,43,14,4,3,18,55,59,68,94,116,121,123,94,78,83,94,103,80,56,45,37,45,24],[19,11,8,9,10,20,44,30,58,55,113,123,99,86,104,127,109,110,75,43,51,52,39,26],[15,14,2,8,11,16,34,35,50,66,112,117,95,79,76,103,104,81,75,58,46,50,46,28],[18,19,1,13,4,15,15,20,45,61,84,86,77,66,36,44,69,70,53,35,38,32,30,19],[14,26,1,4,1,17,8,9,23,50,60,50,47,44,44,65,52,36,39,33,27,35,29,9]],"dt":[1038,1224,1485,1421,1321,950,723],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"21":["鼻塞竟是癌！醫憑內視鏡「1不對稱」揪鼻咽癌　4大警訊：痰中帶血快就醫 | 祝你健康","萬人健走！不只理賠、更要防病！國泰轉動全民健康主權 | 財經 | 三立新聞網 SETN.COM"],"20":["清明掃墓婆婆逼孩「請假出席」命理師示警了 | 生活 | 三立新聞網 SETN.COM","馬路不再只給車開！澳洲專家見證桃園封街大玩塗鴉　百組親子找回童年 | 生活 | 三立新聞網 SETN"],"19":["中東戰火衝擊塑料供應　雙北：垃圾袋穩定供應 | 生活 | 三立新聞網 SETN.COM","台電：核三再運轉3月送審　後執行裝備整備自主安檢 | 政治 | 三立新聞網 SETN.COM"],"18":["管太多？社區65戶被要求拆除第二道鐵門　消防：保護不成反困死屋內 | 生活 | 三立新聞網 SETN","獨家／PLG戰力失衡？　陳建州反看出優勢：領航猿成台籃指標 | 運動 | 三立新聞網 SETN.CO"],"17":["拳后回歸戰亞運！世界拳總證實林郁婷「女性」無誤　枯等18個月終平反 | 運動 | 三立新聞網 SET","驚險玩命片！爺孫自行車雙載穿梭街頭　女童僅站「火箭筒」搖晃險摔車 | 社會 | 三立新聞網 SETN"],"16":["快訊／台中捷運疑大當機！18站「設備異常」全癱瘓　數百旅客被請下車 | 生活 | 三立新聞網 SET","三酸甘油酯飆破500！她三餐「清淡」竟中招？營養師：不是少油就好 | 祝你健康"],"15":["花蓮地院拉起封鎖線？大批員警火速趕抵…防爆小組拆開不明包裹秒無言 | 社會 | 三立新聞網 SETN","布布來了！7-11「金黃布丁」開賣時間曝　整顆沒焦糖醬要被搶翻了 | 生活 | 三立新聞網 SETN"],"14":["宣判倒數！聲請解除境管赴日被駁回　柯文哲酸「逃亡說」：大家都不相信 | 政治 | 三立新聞網 SET","暨南女大生赴桃園打工　搭小黃車資不足被丟包西濱公路 | 社會 | 三立新聞網 SETN.COM"],"13":["清潭洞豪宅掰了！林秀香宣布「搬新家」空間砍半：為了追求極簡主義 | 娛樂星聞","《俗女》小嘉玲變成學霸！宣布「繁星考上法律系」　18歲超狂近況曝光 | 娛樂星聞"],"12":["上架秒掃光！好市多「哈利波特聯名餅乾」超巨實體曝　網讚：好吃又霸氣 | 生活 | 三立新聞網 SET","綠委配合喊「一邊一國」她卻氣炸　陳昭姿再嗆：加料辱罵我的不排除提告 | 政治 | 三立新聞網 SET"],"11":["邵雨薇挑戰「當小三釣人夫」　把楊祐寧衣服扒光！車上激戰解放慾望 | 娛樂星聞","AI晶片需求引爆先進製程！台積電領漲　訂單延伸至2027 | 財經 | 三立新聞網 SETN.COM"],"10":["《紅人榜》創作魔王超狂改編經典歌曲 ！伍浩哲大讚：超越原唱 | 娛樂星聞","再談國防特別預算！黃暐瀚：一直吵「不知要買什麼」浪費一百多天 | 政治 | 三立新聞網 SETN.C"],"9":["轟李貞秀比倒讚沒素養！他嗆國台辦：派個水準好一點的 | 政治 | 三立新聞網 SETN.COM","最喘登高賽Round 2？王義川點名爬山　蘇巧慧喊：體力不會輸任何男生 | 政治 | 三立新聞網 S"],"8":["甩律師巴掌又嗆殺他們遭收押！悍女成公敵隻身出庭　慘無人願替她辯護 | 社會 | 三立新聞網 SETN","中共沒有2027攻台計畫？曝1原因「風險過高」　他示警：沒來的狼還是狼 | 政治 | 三立新聞網 S"],"7":["包裹當球丟！超商店員「惡劣行徑曝光」網炸鍋　7-11回應了 | 生活 | 三立新聞網 SETN.CO","棒壇新布局／中職會長風光但難當　最大挑戰曝光了 | 運動 | 三立新聞網 SETN.COM"],"6":["快訊／美國要收手了？川普：正考慮「逐步減少」對伊朗的軍事行動 | 國際 | 三立新聞網 SETN.C","每人補助2千元　領取辦法一次看 | 財經 | 三立新聞網 SETN.COM"],"5":["護荷莫茲海峽船隻！英批准美軍用其基地攻擊伊朗飛彈陣地 | 國際 | 三立新聞網 SETN.COM","吳宗憲民調落後卻祝對手「跑行程平安」！他疑真在祝福嗎⋯林國漳回擊了 | 政治 | 三立新聞網 SET"],"4":["疑用娘家親友當人頭撈千萬！議員李傅中武移送北檢　面對媒體沉默畫面曝 | 社會 | 三立新聞網 SET","屏東三地門休旅車墜橋女送醫！現場驚見泰國護照 4人站車旁隨後竟消失 | 首頁 | 三立新聞網 SET"],"3":["MLB／41歲薛澤3場熱身賽0失分　19年生涯首次春訓自責分率0 | 運動 | 三立新聞網 SETN","鴻海跌破年線　存股變存骨！說好的400元呢　杜金龍曝「這2事」是大隱憂 | 財經 | 三立新聞網 S"],"2":["熱門股／中東衝突鋼鐵俠回神　中鋼帶頭10強 | 財經 | 三立新聞網 SETN.COM","爆統戰高官逃到美國！「脫中者」越來越多？她：最後只剩習近平孤伶伶 | 政治 | 三立新聞網 SETN"],"1":["科技股漲完換誰？美投資主角換人　這2類準備接棒演出 | 財經 | 三立新聞網 SETN.COM","中東戰火嚇不退資金！半導體族群最吸金　這8檔人氣創新高 | 財經 | 三立新聞網 SETN.COM"],"0":["中國史上唯一「文武雙狀元」！鄭冠全能到逆天，為何不為人所知？ | 兩岸(大陸) | 三立新聞網 SE","快訊／中東戰雲籠罩！美股走軟　美超微爆「走私AI晶片」血洗近28% | 財經 | 三立新聞網 SET"],"23":["柯文哲涉侵占政治獻金　競選募款？商業活動？扯不清 | 社會 | 三立新聞網 SETN.COM","洗衣機要怎麼清？全場大推「這清潔劑」超好用：洗出一堆海帶 | 生活 | 三立新聞網 SETN.COM"],"22":["2026高雄智慧城市展登場　永揚消防建構企業數位雙生防護網 | 生活 | 三立新聞網 SETN.CO","魔鬼菜單曝光！情歌王子成始璄2個月狂甩10公斤　從大叔變歐巴粉絲嚇壞 | 娛樂星聞"]}},{"n":"ETtoday","d":"ettoday.net","g":"A","gl":"綜合入口","ta":7518,"dc":20,"mp":[[2.1,0.7,0.5,0.0,0.1,0.8,2.4,4.3,6.2,5.3,5.6,7.0,7.3,5.1,6.6,5.8,8.0,7.7,7.7,3.3,3.0,2.6,3.3,4.6],[1.2,1.4,0.1,0.0,0.0,1.3,3.2,4.1,5.7,5.3,3.1,9.6,6.9,3.4,1.8,6.0,11.1,6.0,7.3,5.5,5.1,2.7,4.9,4.4],[1.1,1.0,0.1,0.1,0.0,1.7,4.3,6.2,4.3,6.4,4.1,6.4,5.9,3.8,4.8,8.0,6.9,6.6,8.6,4.4,3.6,4.2,3.6,3.9],[1.7,1.3,0.2,0.0,0.0,0.7,3.9,3.7,3.5,4.9,6.9,6.0,9.4,8.7,5.8,6.0,5.6,10.4,6.9,3.9,3.8,2.1,1.7,2.6],[0.3,0.7,0.2,0.0,0.0,0.7,3.9,3.6,3.8,5.9,7.3,5.3,8.6,7.2,6.6,7.0,8.3,6.0,7.4,3.2,3.0,4.4,3.8,3.0],[1.7,0.6,0.5,0.1,0.0,1.7,2.6,2.9,3.7,7.4,8.3,7.7,10.4,3.9,4.7,5.8,8.4,9.5,4.7,3.7,4.4,2.3,2.4,2.5],[2.4,0.8,0.3,0.3,0.0,0.5,1.4,4.7,4.7,5.0,10.4,8.4,9.8,6.5,6.3,5.1,4.4,8.3,5.0,2.3,3.0,3.2,3.5,3.9]],"mr":[[23,7,5,0,1,9,26,46,67,57,60,75,78,55,71,62,86,83,83,35,32,28,35,49],[12,14,1,0,0,13,33,42,58,54,32,98,70,35,18,61,113,61,74,56,52,28,50,45],[14,12,1,1,0,21,52,76,53,78,50,78,72,47,58,98,84,80,105,54,44,51,44,48],[22,17,3,0,0,9,50,47,45,62,87,76,120,111,74,76,71,132,88,50,48,27,22,33],[4,9,2,0,0,9,51,47,50,78,96,70,114,95,87,92,110,79,98,42,40,58,50,39],[16,6,5,1,0,16,25,28,35,70,79,73,99,37,45,55,80,90,45,35,42,22,23,24],[16,5,2,2,0,3,9,31,31,33,69,56,65,43,42,34,29,55,33,15,20,21,23,26]],"dt":[1073,1020,1221,1270,1320,951,663],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"20":["直擊／李翊君才剛唱完「突當眾遭質疑對嘴」！　嚇壞求救孔鏘","石垣島超療癒「貓島」攻略！看百隻喵星人　還有蔚藍海景+夕陽"],"19":["王威晨睽違10年再守一壘就是帥　許基宏笑喊：高挑纖細拉高平均值","直擊／TWICE大巨蛋day2！Mina臉腫沒消「面紗覆臉」　限定版造型現身"],"18":["陳冠宇合約年先求健康出賽　喊話目標投到40歲","賴清德拋重啟核電　綠黨團：民進黨立場清楚就是安全第一"],"17":["民進黨非核家園破功！　國民黨籲賴清德：發布緊急命令重啟核三","「特殊1工作」月領25K！他猶豫要不要接　網驚：太爽了吧"],"16":["不想動！「液態喵喵」流下樓梯　姿態軟爛差點被誤會癱瘓","北一菜鳥張薰文小巨蛋首秀當沒人看　飆全隊最高20分在意投「肉包」"],"15":["烏日警局首辦家庭日歡慶兒童節　小小萌警接棒傳承榮耀","賴清德擬重啟核二核三　蔣萬安：民進黨擁抱非核家園完全錯誤"],"14":["蕭煌奇PO用餐照「吃魚顧眼睛」　放火回1句！網驚：雙倍地獄哏","用AI聽懂鳥語的抗議　小學生創作《啾啾翻譯機》短片奪動畫獎特優"],"13":["伊朗報復狂轟！美軍基地「2周損失256億」　百億薩德雷達重創","台灣傳奇歌后竟是白恐受難者！父親遭槍決　學霸女棄醫「淪夜總會名伶」養家"],"12":["嬤遭瘋狂撕咬縫200針險死！3惡犬離奇消失　疑被養雞場帶走藏匿","山本由伸七彩變化球全面發威　羅伯斯：非常有效率"],"11":["TWICE大巨蛋開唱帶動　北捷週五運量破260萬人次創3月新高","朴娜勑2度憔悴現身！　「歷經7小時警方調查」詭異笑容消失了"],"10":["「被台灣追上的韓國棒球」　經典賽後韓媒檢討基層兩大制度","川普：美國收手「以色列就不會打了」！　以軍再轟黎巴嫩"],"9":["喀麥隆主辦WTO部長會議配合中國矮化台灣　綠委籲停止打壓","川普開噴了！　怒轟北約「全是一群膽小鬼」"],"8":["海盜搶先綁定頭號新秀葛里芬　傳開價9年破億美元","馬斯克吞敗！法院裁定「詐欺推特股東」　恐噴830億賠償金"],"7":["20歲軍人陳屍布袋運動公園　男嫌羈押","今永昇太接受日媒專訪曝新調整　自信喊：有方法應對新球季"],"6":["清大人社男批理組「無知的豬」引戰　被酸學觀落陰：自卑變自大","經典賽表現吸引衛冕軍！　道奇簽下前韓職左投補強輪值深度"],"5":["F-35「隱形神話」被擊落！　前空軍副司令揭原因","美超微血洗狂殺33％！　高層涉走私輝達AI晶片到中國"],"2":["Lady M突宣布改規則「杜拜千層不單賣」　掀熱議：蛋糕也要配貨？","家藏女大生頭骨！日本分屍魔認罪　殘暴細節曝光：搜食譜吃內臟"],"1":["伊朗最高領袖發布聲明！最新影片「仍未公開露面」","保時捷最新專利「手排可秒切自排模式」！性能＆駕駛體驗取得平衡"],"0":["「疣豬」、阿帕契戰機出動！荷莫茲海峽空中打擊　鎖定伊朗快艇","44歲公務員棄鐵飯碗退休！投資靠3招避開「越買越低」陷阱"],"23":["別跟著唸！《邪降》狂唸30句真實降頭咒　初代「潘老師」回歸、滾燙鉛液灌喉","防曬一直沒效果？這些「日常誤區」你中了幾個？"],"22":["主管其實都在看！6個職場地雷行為，你可能每天都在犯","快訊／台籃之光！　領航猿擊敗日本連兩季挺進EASL東超冠軍戰"],"21":["何品室融關鍵二壘打逆轉　樂天桃猿5比4逆轉擊敗統一獅","影院不敢播！李英宏操刀《鬼牽手》配樂慘中邪　「肩扛重物」奔廟收驚3次"],"3":["德國薩克森自台灣進口年增35%　雙方在半導體與高科技互補性強","快訊／02:58宜蘭近海規模4.2「極淺層地震」　最大震度4級"],"4":["甜蜜新人婚禮用《劍魂》對決爆紅　格鬥取代共舞網羨慕：是真愛"]}},{"n":"NOWnews 今日新聞","d":"nownews.com","g":"A","gl":"綜合入口","ta":5979,"dc":20,"mp":[[0.9,0.2,0.1,0.0,0.4,2.7,4.8,3.7,5.3,8.0,9.7,4.1,6.0,7.5,4.8,4.9,7.4,8.6,4.7,4.9,3.0,4.1,3.8,0.2],[0.9,0.6,0.4,0.1,0.2,3.4,2.9,2.3,1.3,8.4,6.5,9.9,8.6,6.0,4.8,9.7,8.2,7.2,4.3,3.9,3.3,3.3,2.7,1.2],[1.1,0.1,0.0,0.0,0.4,2.5,3.3,3.1,2.5,6.5,8.3,9.5,7.8,7.5,5.3,6.9,7.7,7.5,7.0,3.6,2.6,2.8,2.0,1.9],[1.0,0.1,0.0,0.2,0.0,2.4,2.8,2.3,3.8,3.7,7.8,7.7,9.0,7.3,7.5,8.7,7.5,7.7,6.7,4.2,3.9,2.8,1.8,1.4],[0.6,0.1,0.0,0.1,0.1,2.5,2.9,2.3,2.5,6.2,9.4,8.9,6.3,5.3,7.1,7.8,7.7,7.9,5.5,4.4,2.7,3.2,3.6,2.5],[1.0,0.1,0.0,0.0,0.0,2.1,4.0,2.2,4.2,6.5,9.3,7.9,8.0,7.8,5.4,5.8,6.5,8.9,5.1,5.1,5.0,2.6,1.9,0.6],[1.0,0.0,0.4,0.0,0.0,2.4,1.8,1.4,3.7,8.3,8.8,6.5,9.8,6.3,10.0,9.8,8.1,5.3,2.9,3.1,3.7,3.7,2.2,0.8]],"mr":[[7,2,1,0,3,22,39,30,43,65,79,33,49,61,39,40,60,70,38,40,24,33,31,2],[8,5,3,1,2,29,25,20,11,72,56,85,74,51,41,83,70,62,37,33,28,28,23,10],[11,1,0,0,4,26,34,32,26,67,85,98,80,77,54,71,79,77,72,37,27,29,21,20],[11,1,0,2,0,25,30,24,40,39,82,81,95,77,79,92,79,81,71,44,41,30,19,15],[6,1,0,1,1,25,29,23,25,62,93,88,63,53,71,78,77,79,55,44,27,32,36,25],[7,1,0,0,0,15,29,16,30,47,67,57,58,56,39,42,47,64,37,37,36,19,14,4],[5,0,2,0,0,12,9,7,19,42,45,33,50,32,51,50,41,27,15,16,19,19,11,4]],"dt":[811,857,1028,1058,994,722,509],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"21":["油價高漲怎解？國際能源總署：推動遠距辦公與多用大眾交通","不是ARMY經過也要安檢！光化門附近居民氣炸 BTS回歸遭批擾民 | 娛樂 | NOWnews今日新"],"20":["BTS回歸有多猛？家長在IVE演唱會外等小孩 眼睛緊盯Netflix直播 | 娛樂 | NOWnew","核電復活？行政院強調「三原則」為前提：核二、三具可行性 | 要聞 | NOWnews今日新聞"],"19":["BTS現身光化門大喊：我們回來了 RM受傷坐椅子飆唸Rap萬人看哭 | 娛樂 | NOWnews今日","楊瓊瓔大型造勢喊「媽媽市長2.0」 要無縫接軌盧秀燕再創高峰"],"18":["不斷更新／BTS回歸秀26萬人塞爆光化門 粉絲等了2年7人終於合體 | 娛樂 | NOWnews今日","美以再轟伊朗核設施！納坦茲二度遇襲 伊朗稱未發生輻射外洩"],"17":["快訊／台中捷運13站「設備異常」全癱瘓 數百旅客被請下車 | 生活 | NOWnews今日新聞","宮城大彌中繼兩局好投！僅被敲一安打無失分 狂飆150公里火球"],"16":["存1766萬退休金後悔！前高管從沒特休 慘痛告白：真希望沒工作過 | 房產 | NOWnews今日新","清明節掃墓可以提前嗎？禮儀公司公布正解 8大禁忌、時間懶人包"],"15":["道奇主帥羅伯斯大讚山本由伸：「他是一個心理素直非常強的選手」","山本由伸準備好了！扛40度高溫飆7K封鎖教士 美媒神比喻壽司師傅"],"14":["春訓成績亮眼無緣開季大聯盟 洋基外野擁擠 多明格斯小聯盟出發 | MLB | 運動 | NOWnew","南橫山難6旬翁猝死3千公尺高山 心碎妻伴屍一整夜今脫困 | 社會 | NOWnews今日新聞"],"13":["勇士失去空間型5號！波爾辛吉斯、霍福德全受傷 科爾證實壞消息","韋禮安4月到屏東三大日音樂節開唱 ！點名想要好好吃豬腳 | 娛樂 | NOWnews今日新聞"],"12":["蔣萬安撞臉《逐玉》金爺 笑回「我差這演員很多啦」 | 要聞 | NOWnews今日新聞","為40萬債務談判爆凶殺案！嘉義20歲軍人遭砍頭陳屍公園 凶嫌收押 | 社會 | NOWnews今日新"],"11":["火箭止敗成功 杜蘭特、史密斯聯手擊退老鷹 強勢斬斷對手11連勝","海鯤號再被爆3大瑕疵 台船火速解釋：不影響測試可立即改進"],"10":["評論／勇士吞二連敗啟示：波神交易徹底失敗 明年騰出空間幹大事","朱系槓上黨中央！凌濤要鄭麗文理解：不相干的事不需回應"],"9":["唐西奇情場失意球場得意！與未婚妻分手後爆發 近8戰場均破40分","BTS粉絲ARMY連Netflix高層都怕！直呼壓力超大：比爬台北101還難 | 娛樂 | NOWn"],"8":["公鹿老闆下最後通牒！字母哥「不續約就交易」 不可能白白放他走 | NBA | 運動 | NOWnew","銀赫主持費破8位數！綜藝天王酬勞最多是他 豬哥亮1集賺進85萬"],"7":["高佳彬是誰？河回面具女神、台灣手搖都喝半糖 加盟樂天改背號26 | 娛樂 | NOWnews今日新聞","2026 MLB國聯東區分析／索托率大都會衝冠 費城人、勇士三強鼎立"],"6":["NBA季後賽最新形勢更新！又有一隊確定晉級 西區「3-6名」大亂鬥","庫明加預計跳出合約 老鷹謀劃新協議 科爾認了：勇士限制其成長"],"5":["領航猿102：76逆轉東京電擊！連2年闖東超冠軍戰 阿提諾繳代表作","兄弟新洋投漸入佳境！陶樂談台灣打者特性：不容易被三振很會纏鬥"],"0":["川普怒轟北約是懦夫！拒護航荷姆茲海峽還嫌油價高：我們會記住","德保拉相隔289天再度登板！內心忐忑又興奮：這些日子最想念投球"],"23":["美股主要指數開盤齊跌！伊朗戰事持續 專家示警市場恐仍過度樂觀 | 國際要聞 | 全球 | NOWne","一週來三次！中海警4艦分進合擊闖我禁區 海巡1對1併航強硬驅離 | 要聞 | NOWnews今日新聞"],"22":["名家論壇》徐佳馨／央行鬆手救市？通膨焦慮下現金流壓力測試開始","子瑜SOLO曲〈RUN AWAY〉台灣首唱！寶藍色新服裝登大巨蛋ONCE暴動 | 娛樂 | NOWn"],"4":["賴清德首登海鯤號！了解測試現況 國造潛艦「內裝」曝光 | 要聞 | NOWnews今日新聞","綠營中彰強強聯手！陳素月何欣純催生彰濱土方場 解決停工潮 | 要聞 | NOWnews今日新聞"],"3":["晚安小雞回台灣露面了！親認「被騙1300萬」 拘留36天模樣超憔悴 | 生活 | NOWnews今日","綠營沒收李貞秀質詢權！陳智菡氣炸喊：不會退讓也不會沉默 | 要聞 | NOWnews今日新聞"],"1":["外傭門檻鬆綁！家有12歲以下孩童即可申請 綠委憂衝擊本土保母 | 要聞 | NOWnews今日新聞","拿槍的挺拿鐵鎚的！新北戰警力挺李四川：接棒侯友宜拚新北 | 要聞熱焦 | NOWnews今日新聞"],"2":["環狀線「新車站」施工中！蘆洲要道3/16封8天 未來新莊直達士林 | 生活 | NOWnews今日新","川普稱各國將一起派軍艦護航荷姆茲海峽！中日韓都被點名"]}},{"n":"TVBS","d":"tvbs.com.tw","g":"A","gl":"綜合入口","ta":5956,"dc":20,"mp":[[0.1,0.7,0.4,0.2,0.2,1.7,1.7,3.5,4.4,6.5,11.6,3.3,7.2,7.6,5.4,8.7,11.2,10.3,5.0,3.4,1.6,2.0,2.8,0.5],[0.3,0.3,0.3,0.8,0.8,1.0,1.0,2.0,1.7,7.9,9.4,10.2,11.1,5.8,4.4,10.8,10.4,9.7,4.9,1.9,2.0,1.0,1.2,0.9],[0.1,0.4,0.2,0.2,0.2,1.0,0.7,2.2,2.7,6.7,10.4,9.3,11.1,6.1,4.9,8.4,9.2,9.5,6.4,2.9,2.0,2.0,1.5,1.6],[0.1,0.3,0.3,0.4,0.7,1.4,1.0,2.0,3.8,5.2,12.6,8.4,8.0,8.0,8.0,9.2,7.6,7.5,5.5,1.9,1.9,2.2,2.6,1.3],[0.1,0.2,0.2,0.4,0.3,0.2,0.2,1.9,2.5,7.4,9.9,9.0,9.8,8.4,8.7,9.5,7.0,9.1,4.6,1.9,2.8,2.7,2.1,1.0],[0.0,0.3,0.3,0.3,0.3,0.3,0.4,1.9,3.4,8.8,10.7,10.1,9.4,7.3,5.0,6.7,9.2,7.5,7.3,3.2,2.9,1.8,1.8,1.3],[0.0,0.4,0.6,1.0,1.0,1.7,0.4,0.8,2.5,8.2,9.6,7.1,8.6,7.5,7.7,7.1,10.5,5.2,5.9,4.0,2.1,2.3,2.5,3.1]],"mr":[[1,6,3,2,2,14,14,29,36,53,95,27,59,62,44,71,92,84,41,28,13,16,23,4],[3,3,3,7,7,9,9,18,15,70,84,91,99,52,39,96,93,86,44,17,18,9,11,8],[1,4,2,2,2,10,7,22,27,67,103,93,110,61,49,84,92,95,64,29,20,20,15,16],[1,3,3,5,8,16,12,23,44,60,146,97,93,93,92,107,88,87,64,22,22,26,30,15],[1,2,2,4,3,2,2,18,23,69,92,84,91,78,81,89,65,85,43,18,26,25,20,9],[0,2,2,2,2,2,3,13,23,60,73,69,64,50,34,46,63,51,50,22,20,12,12,9],[0,2,3,5,5,8,2,4,12,39,46,34,41,36,37,34,50,25,28,19,10,11,12,15]],"dt":[819,891,995,1157,932,684,478],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"21":["賴清德認核二、核三具重啟條件！環團反對怒批：台灣無法承受風險│TVBS新聞網","ONE OK ROCK攻占大銀幕！震撼還原7萬人現場　2影廳打造最強臨場感│TVBS新聞網"],"20":["李多慧也跟上！挑戰爆紅洗腦神曲　雙馬尾「對鏡頭放電」融化粉絲│TVBS新聞網","大港夯團Aooo五月首辦台灣專場！　鋼彈歌姬米倉千尋六月來台巡演│TVBS新聞網"],"19":["直擊／王彩樺遭虧撞臉三星堆青銅　「偷桃」胡瓜超狠畫面全被拍│TVBS新聞網","林襄「認愛2新歡」！公開超實用化妝、保養祕訣　告白粉絲：很想你們│TVBS新聞網"],"18":["被NONO捲性侵拖累！朱海君消失2年暴瘦露面　康康揭她回歸內幕│TVBS新聞網","第7屆JKF百大女郎冠軍出爐！「嬌慾系的她」打敗600正妹　放送飽滿上圍 │TVBS新聞網"],"17":["賴清德鬆口重啟核電！台電公開「核二、核三評估進度」│TVBS新聞網","《逐玉》配角受封完顏團！孔雪兒、鄧凱「鴛鴦浴狂吻3回」成名場面│TVBS新聞網"],"16":["英實境秀男星詭異陳屍「普吉島排水溝」　生前飯店外狂奔畫面曝│TVBS新聞網","小S開工街頭崩潰大哭　趙正平心疼嘆壓力大「不要去打擾」│TVBS新聞網"],"15":["為省錢天天吃「這食物」！慘害一家三口全罹胰臟癌　醫揭致命關鍵│TVBS新聞網","當高市面開臭「偷襲珍珠港」！他曝川普態度：只對1種人客氣│TVBS新聞網"],"14":["BTS光化門開唱前衝突！8旬翁持刀欲進入被擋　竟怒丟地刀刃彈出│TVBS新聞網","Twice大巨蛋》寵台粉！子瑜首唱Run Away應援快練　進場前6重點別踩雷│TVBS新聞網"],"13":["磁暴來了！人體也受影響　失眠、頭痛「高敏人情緒易波動」│TVBS新聞網","驚悚！台灣好行司機「毒駕」載10客出車禍　快篩陽性當場被逮│TVBS新聞網"],"12":["美國打伊朗6天耗盡數年飛彈產量　外媒：恐削弱對中國嚇阻力│TVBS新聞網","伊朗警告旅遊地將成目標！嗆美以官員「躲起來」　外界憂攻擊擴大│TVBS新聞網"],"11":["天氣／把握好天氣！周日回暖飆30度　下周三再變天│TVBS新聞網","在光化門砸千萬辦婚禮全毀…新人擬開告　他怒轟：BTS很屌就沒差嗎？│TVBS新聞網"],"10":["友誼真翻車！屏東轎車自撞墜橋留1女　4同伴沒義氣全跑光│TVBS新聞網","舒淇代言新款SU7上市！售價下調　門把手升級「撞擊不卡死」│TVBS新聞網"],"9":["S Hotel掰了汪小菲！掛新牌「OOD梧邸酒店」下半年開幕│TVBS新聞網","中和印刷廠深夜大火「狂燒200平方公尺」　3工廠遭波及│TVBS新聞網"],"8":["東超／領航猿下半場大逆轉擊退東京電擊　連2季闖進冠軍戰│TVBS新聞網","家中廚餘先別丟！達人3步驟「自製堆肥桶」　洗衣精空瓶就能做│TVBS新聞網"],"7":["天氣／週末兩樣情！今防陣雨　明起大回溫「全台紅通通」│TVBS新聞網","準備展開地面行動？美增派兩棲攻擊艦拳師號、數千部隊赴中東│TVBS新聞網"],"6":["突然喉嚨卡卡、吞嚥不順！醫揭「這姿勢是元凶」：你每天都在做│TVBS新聞網","喝無糖飲料血糖仍超標！醫打破迷思　曝糖尿病「3大元兇」 │TVBS新聞網"],"5":["72歲詹老師「手腫1天」就病逝！醫示警：1症狀超危險│TVBS新聞網","舊內衣不要丟！1縣市「可換錢、衛生紙」　活動到這時│TVBS新聞網"],"4":["躺下睡覺就鼻塞！醫授「腋下1動作」20秒見效　改善對策曝│TVBS新聞網","睡到一半全身濕！「盜汗」是身體響警報　醫：2類人高風險│TVBS新聞網"],"3":["女神也水腫！張鈞甯自爆「腫成內雙」　專家授4招：輪廓秒回來│TVBS新聞網","愛意擺在明面上！4星座暈船後「話超多」　熱烈真摯擋不住│TVBS新聞網"],"2":["葉青心血管阻塞急裝3支架！「1習慣」成主因　醫：塞住要命│TVBS新聞網","免百萬就能入手！豐田越野車FJ傳日本開賣　恐遭瘋搶、改抽籤制│TVBS新聞網"],"1":["歐洲「1國家」物價與台差不多？住宿1晚800元　網：太心動│TVBS新聞網","視力突降、畏光快就醫！醫曝白內障「這型」最危險：恐誘發青光眼│TVBS新聞網"],"23":["快訊／揚言「要捅10人」！台中男廟會持刀行兇　3人受傷嫌犯在逃│TVBS新聞網","小心桃花劫！「4生肖」遇陀羅星攪局　曖昧、戀情動盪│TVBS新聞網"],"22":["快訊／「地球最強男人」查克羅禮士病逝享壽86歲！曾與李小龍羅馬競技場死戰│TVBS新聞網","一到日本旅遊就失控！網列「5狀況」全命中　台人崩潰：做不到│TVBS新聞網"],"0":["陸健身妹打「增肌針」長喉結、變公鴨嗓　專家一看傻住：馬匹專用│TVBS新聞網","松山新店線串聯雙國門金軸 珍稀大道門牌「上陽羅斯福」出站到家│TVBS新聞網"]}},{"n":"中央社","d":"cna.com.tw","g":"A","gl":"綜合入口","ta":5879,"dc":20,"mp":[[0.6,0.5,0.5,0.2,0.6,0.5,0.5,1.4,3.6,4.4,5.6,3.0,5.7,5.7,6.1,7.9,10.1,11.0,10.9,6.3,3.5,5.7,5.0,0.7],[0.2,0.4,0.8,0.1,0.3,0.4,0.6,0.8,0.4,4.0,4.6,8.5,10.5,5.4,4.6,8.3,9.8,12.8,7.4,6.3,5.9,4.4,2.8,0.9],[0.2,0.3,0.5,0.4,0.3,0.5,0.6,1.5,3.0,4.1,4.8,6.8,9.1,7.3,5.6,6.7,9.6,10.9,7.0,7.7,4.9,3.8,2.8,1.7],[0.5,0.3,0.8,0.5,0.6,0.3,0.5,1.8,3.9,2.1,4.5,6.4,6.9,7.5,8.5,7.5,8.4,10.2,7.4,6.0,5.9,4.3,4.0,1.2],[0.2,0.8,0.2,0.5,0.8,0.4,0.4,1.7,2.5,3.5,4.8,7.8,7.1,6.4,8.1,7.1,9.0,9.4,7.5,7.1,4.9,3.0,5.0,1.9],[0.9,0.3,0.3,0.2,0.3,0.5,0.7,1.0,4.7,5.9,6.1,7.3,7.6,7.3,5.9,4.0,10.2,9.5,8.5,6.4,5.4,3.6,2.4,0.7],[1.0,0.8,0.5,0.8,0.5,0.5,0.0,1.0,3.9,4.2,7.6,9.2,7.9,5.2,7.3,6.5,7.6,5.8,7.3,7.3,5.0,3.7,3.9,2.4]],"mr":[[5,4,4,2,5,4,4,12,30,37,47,25,48,48,51,66,85,92,91,53,29,48,42,6],[2,4,7,1,3,4,5,7,4,36,42,77,95,49,42,75,89,116,67,57,54,40,25,8],[2,3,5,4,3,5,7,16,33,45,52,74,99,80,61,73,105,119,76,84,53,42,31,19],[5,3,9,5,7,3,5,20,42,23,49,69,75,81,92,81,91,110,80,65,64,47,43,13],[2,8,2,5,8,4,4,17,25,35,48,78,71,64,81,71,90,94,75,71,49,30,50,19],[5,2,2,1,2,3,4,6,27,34,35,42,44,42,34,23,59,55,49,37,31,21,14,4],[4,3,2,3,2,2,0,4,15,16,29,35,30,20,28,25,29,22,28,28,19,14,15,9]],"dt":[838,909,1091,1082,1001,576,382],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"21":["總統直選30年　周奕成、苗博雅對談台灣政黨政治困局 | 政治 | 中央社 CNA","王博玄開轟帶雄鷹反攻　賞龍官辦熱身賽6連敗 | 運動 | 中央社 CNA"],"20":["鼓勵張肇元術後大膽投　吉力吉撈：韌帶不會再斷 | 運動 | 中央社 CNA","泰國加油站無油可售引恐慌　當局嚴查有無囤油牟利 | 產經 | 中央社 CNA"],"19":["高虹安訪日本藝文地標　借鏡沉浸技術與場館營運 | 地方 | 中央社 CNA","HBL蘇衡繳大三元　陽明破小巨蛋魔咒前進冠軍戰 | 運動 | 中央社 CNA"],"18":["花蓮地院可疑包裹驚動防爆小組　僅為報紙惹虛驚 | 社會 | 中央社 CNA","中東戰火第4週　伊朗官媒：納坦茲核設施遭空襲 | 國際 | 中央社 CNA"],"17":["桃園比菲利國際美學診所傳倒閉　百人受害申訴求償 | 地方 | 中央社 CNA","張峻瑋日職二軍飆速154公里　連兩戰後援無失分 | 運動 | 中央社 CNA"],"16":["AI翻譯鳥語抗議綠地變少　北教大實小獲信誼動畫獎 | 生活 | 中央社 CNA","台南捷運綠線可行性研究獲市議會同意　將提送中央 | 地方 | 中央社 CNA"],"15":["魏哲家獲亞大名譽博士　直言中國機器人「沒用」 | 產經 | 中央社 CNA","6旬山友墜秀姑巒山碎石坡重傷 空勤救援送醫 | 社會 | 中央社 CNA"],"14":["傳川普研議奪取伊朗濃縮鈾　可能出動精英特種部隊 | 國際 | 中央社 CNA","美媒：中國打壓為被捕基督教領袖辯護的律師 | 兩岸 | 中央社 CNA"],"13":["龍仔首曝加入台灣隊契機：郭泓志陳偉殷態度超專業 | 運動 | 中央社 CNA","高市早苗訪阿靈頓公墓　川普促日本分擔荷莫茲海峽維安 | 國際 | 中央社 CNA"],"12":["中東戰爭第21天》川普考慮逐步結束對伊行動　最新發展一次看 | 國際 | 中央社 CNA","北京學者：川普若實現年內訪中就是「好兆頭」 | 兩岸 | 中央社 CNA"],"11":["美對伊朗戰爭目標多變　最新說法與時程演變一次看懂 | 國際 | 中央社 CNA","蔣萬安：能源危機曾催生十大建設　值得中央借鑑 | 地方 | 中央社 CNA"],"10":["中國廣東茂名信宜警民衝突　村民不滿興建火葬場 | 兩岸 | 中央社 CNA","中東戰火與關稅夾擊　央行：AI進程牽動台灣經濟成長 | 產經 | 中央社 CNA"],"9":["美暫允海上伊朗石油銷售　緩解全球能源壓力 | 國際 | 中央社 CNA","川普稱擬逐步結束對伊朗行動　荷莫茲海峽維安應由他國負責 | 國際 | 中央社 CNA"],"8":["國民黨北市議員李傅中武涉詐助理費逾千萬　500萬交保 | 社會 | 中央社 CNA","美主導區域國防工業韌性聯盟召開會議　台灣派員參與 | 政治 | 中央社 CNA"],"7":["美官員：持續挺台國際參與　反對北京扭曲2758決議 | 國際 | 中央社 CNA","中東戰局未見和平方案　道指總跌幅一度進入市場修正 | 產經 | 中央社 CNA"],"6":["川普政府告哈佛大學　控校方縱容反猶示威釀敵意校園 | 國際 | 中央社 CNA","伊朗戰事未見緩解　布倫特油價收在2022年中以來高點 | 產經 | 中央社 CNA"],"5":["能源供應受阻引發經濟衰退疑慮　美股收黑 | 證券 | 中央社 CNA","市場持續關注伊朗戰爭　美股多收黑 | 證券 | 中央社 CNA"],"4":["保護航道　英國批准美軍使用其基地攻擊伊朗飛彈陣地 | 國際 | 中央社 CNA","能源市場震盪　布倫特原油收漲、WTI小幅下跌 | 產經 | 中央社 CNA"],"2":["兩棲攻擊艦拳師號領軍出動　美增派數千部隊趕赴中東 | 國際 | 中央社 CNA","川普：延遲訪中一個半月　期待出訪 | 國際 | 中央社 CNA"],"1":["憂能源危機　歐股挫跌 | 證券 | 中央社 CNA","CNN：美軍F-35緊急降落中東基地　疑遭伊朗擊中 | 國際 | 中央社 CNA"],"0":["新北中和工廠深夜大火　火勢控制疏散24人 | 社會 | 中央社 CNA","美參院銀行委員會兩黨領袖致函SEC　要求限制中企在美上市 | 國際 | 中央社 CNA"],"23":["美國動作明星羅禮士逝世　與李小龍對打戲蔚為經典 | 娛樂 | 中央社 CNA","桃園遊覽車事故　監理所將派員查核 | 社會 | 中央社 CNA"],"22":["男持棍棒助勢討債反遭刺死　嘉檢聲押凶嫌獲准 | 社會 | 中央社 CNA","宏碁墨西哥子公司陷租稅爭議　將提上訴 | 產經 | 中央社 CNA"],"3":["油輪疑採欺瞞方式航行　載運俄柴油數日內抵古巴 | 國際 | 中央社 CNA","美日峰會川普引珍珠港事件開玩笑　高市早苗滿臉尷尬 | 國際 | 中央社 CNA"]}},{"n":"壹蘋新聞網","d":"nextapple.com","g":"A","gl":"綜合入口","ta":4087,"dc":20,"mp":[[6.4,0.0,0.6,0.4,0.2,0.0,3.6,3.2,5.3,5.6,11.3,3.4,5.6,8.8,4.9,5.8,8.1,7.5,4.9,3.9,5.1,3.0,2.3,0.2],[6.1,0.7,1.3,0.3,0.7,0.2,1.3,3.2,2.3,5.8,8.0,12.4,8.5,5.0,5.1,8.3,9.5,7.8,4.5,3.2,2.3,1.2,1.2,1.3],[5.6,0.3,0.6,0.6,0.0,0.4,2.2,1.9,4.2,4.6,8.6,10.1,7.3,3.7,4.9,7.6,9.1,6.3,7.1,4.5,4.3,3.3,1.7,1.0],[6.2,0.7,0.7,0.3,0.0,0.0,2.9,2.2,4.3,2.2,7.9,7.7,8.3,4.6,7.0,8.1,8.2,8.5,6.9,3.6,4.9,2.6,1.4,0.9],[5.0,0.8,0.8,0.8,0.3,0.8,1.2,3.0,4.2,4.8,8.4,9.3,6.9,4.5,6.3,7.4,8.4,6.9,5.7,4.4,5.3,2.0,2.0,1.1],[5.6,0.0,0.2,0.2,0.0,0.0,1.2,1.4,6.8,6.4,8.4,7.0,7.2,7.6,7.2,6.8,6.2,8.2,6.0,4.5,4.9,2.1,1.4,0.8],[6.8,0.0,1.0,0.3,0.6,0.0,0.6,2.9,3.5,3.5,8.7,7.7,8.1,6.5,7.1,7.7,8.4,2.9,6.5,5.8,4.8,3.9,1.9,0.6]],"mr":[[34,0,3,2,1,0,19,17,28,30,60,18,30,47,26,31,43,40,26,21,27,16,12,1],[37,4,8,2,4,1,8,19,14,35,48,75,51,30,31,50,57,47,27,19,14,7,7,8],[39,2,4,4,0,3,15,13,29,32,60,70,51,26,34,53,63,44,49,31,30,23,12,7],[48,5,5,2,0,0,22,17,33,17,61,59,64,35,54,62,63,65,53,28,38,20,11,7],[33,5,5,5,2,5,8,20,28,32,56,62,46,30,42,49,56,46,38,29,35,13,13,7],[29,0,1,1,0,0,6,7,35,33,43,36,37,39,37,35,32,42,31,23,25,11,7,4],[21,0,3,1,2,0,2,9,11,11,27,24,25,20,22,24,26,9,20,18,15,12,6,2]],"dt":[532,603,694,769,665,514,310],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"20":["「最美抗癌大使」罹淋巴癌4年說bye bye！揮別人世　旗下公司終止營運｜壹蘋新聞網","樂透開獎！20260321今彩539、39樂合彩、三星彩、四星彩獎號出爐｜壹蘋新聞網"],"19":["沒發現火車來了　18歲體育生「戴耳機過鐵軌」被當場撞死｜壹蘋新聞網","胡瓜開唱前出事了！挨3針急救　他失足跌落樓梯！賴慧如也受傷｜壹蘋新聞網"],"18":["胡瓜《週末最強大》才播一季就收攤！余天被爆頂替他　兩人私下互動曝光｜壹蘋新聞網","企業公告開除女副總　「在辦公室公然偷吃」嚴重影響工作風氣｜壹蘋新聞網"],"17":["台積電魏哲家談AI未來　機器人晶片「95%台積電製造」｜壹蘋新聞網","曾馨瑩世界唐氏症日大跳「Sugar搖」　暖牽唐寶寶北車「鑽轎底」｜壹蘋新聞網"],"16":["獨家｜吳中純改土葬！北海岸美式墓園是首選　4條件曝光｜壹蘋新聞網","父親白恐遭槍決！她被迫下海「接待」外賓　拚命求生存：我不要死｜壹蘋新聞網"],"15":["于美人可能回鍋中正萬華選議員　本尊回應了｜壹蘋新聞網","台積電魏哲家：中國一直弄機器人蹦蹦跳「好看頭但沒用」｜壹蘋新聞網"],"14":["安海瑟薇降臨threads　蔡英文「諧音哏3圖示」迎女神｜壹蘋新聞網","趙正平半年爆瘦11公斤　57歲指數嚴重超標！怒喊：我不是沈玉琳｜壹蘋新聞網"],"13":["提「珍珠港」當場打臉高市早苗　他曝：川普只對一種人客氣｜壹蘋新聞網","前夫陰影太深？Makiyo聞帥伴郎醫美業　不信單身猛虧：跟診所的…　｜壹蘋新聞網"],"12":["悚！他誘殺分屍2女「搜尋烹煮方式」　受害家屬見本尊怒了｜壹蘋新聞網","周杰倫太狂！一支MV燒光1億　媲美好萊塢大片「4幅名畫活過來」｜壹蘋新聞網"],"11":["LINE櫻花雨登場　沒出現原因與關閉設定一次看｜壹蘋新聞網","龍德宮四媽祖4/4起馬　5000信徒9天8夜徒步遶境！桃警強力維安交管｜壹蘋新聞網"],"10":["TWICE攻大巨蛋！子瑜全球首唱《Run Away》　娜璉萌說台語笑倒在地｜壹蘋新聞網","台鐵事故不減反增！今年3個月4起意外　出軌、擠壞設備頻傳｜壹蘋新聞網"],"9":["代排阿嬤難賺了！Lady M「杜拜巧克力」改規則不單賣　｜壹蘋新聞網","34歲人妻赴泰伴遊失聯！ 狂傳「救我」給閨蜜 3天後遭棄屍水溝｜壹蘋新聞網"],"8":["金鐘主持人王浩一猝逝未滿一年　37歲愛女病逝！醫證實了｜壹蘋新聞網","用10萬玩具鈔當餌釣出刺青毒蟲　警逮假幣商車手｜壹蘋新聞網"],"7":["藝人潛水「被拔呼吸器」逼付費拍照　三亞被點名急發聲｜壹蘋新聞網","台中悍女只因「掌摑律師」遭羈押？她揭黑歷史：有夠可憐｜壹蘋新聞網"],"6":["全台天氣大反差「14℃秒衝31℃」　這幾區恐大雨！下週有2波｜壹蘋新聞網","美股跌跌不休！美超微慘崩33%　台積電ADR收挫｜壹蘋新聞網"],"3":["紡織業面臨3大挑戰關鍵轉型期　經濟部攜紡織公協會導入AI應用｜壹蘋新聞網","高雄銀行去年大賺12.78億元再創新高　規劃Q2進駐亞資中心｜壹蘋新聞網"],"2":["一週天氣預報 - 北東前期有雨、各地回暖略悶熱，離島強風｜壹蘋新聞網","有片｜日相高市早苗訪美　川普提「珍珠港」現場空氣凝結｜壹蘋新聞網"],"0":["志聖砸10億入股東捷成最大股東　G2C+聯盟布局南台灣S廊帶｜壹蘋新聞網","日月光智慧城市展秀AI節能技術　攜供應鏈邁向淨零轉型｜壹蘋新聞網"],"23":["一把火燒出外交風暴！尼泊爾大學「不慎」焚毀習近平著作　全都是「牠」惹的禍｜壹蘋新聞網","晚安小雞柬埔寨返台憔悴老10歲！被騙1300萬將開記者會爆真相｜壹蘋新聞網"],"22":["信義房屋讓愛延續　26年6288名學生受惠投入近1400萬元｜壹蘋新聞網","超完美偽裝！負鼠闖入絨毛玩偶堆　差點騙過一堆人｜壹蘋新聞網"],"21":["花蓮縣近海芮氏規模5.1地震　震央深度36.4公里 最大震度3級｜壹蘋新聞網","Ryu和毁他婚姻的小王Tommy大和解！稱「誠心祝福對方」網友傻眼｜壹蘋新聞網"],"5":["台企銀去年賺122億元再創新高　規劃今年Q1遞件申請財管2.0｜壹蘋新聞網","合庫金現金股利可望優於去年　估房市呈「量縮、價緩跌」態勢｜壹蘋新聞網"],"4":["南寶去年賺兩個股本擬配息18元　加速發展半導體特化領域｜壹蘋新聞網","輝達GTC大會｜7款晶片打造AI超級電腦！Vera Rubin下半年推出　台灣供應鏈入列｜壹蘋新聞網"],"1":["奧斯卡分析｜《一戰再戰》勝出《罪人》關鍵原因曝　影人用投票對川普執政動盪世界表態｜壹蘋新聞網","受惠3月降雨順利完成春耕　水利署評估今年水情在可控範圍｜壹蘋新聞網"]}},{"n":"鉅亨網","d":"cnyes.com","g":"B","gl":"財經投資","ta":9692,"dc":20,"mp":[[0.9,0.0,0.1,0.1,0.2,0.5,0.3,0.3,5.9,32.1,13.2,4.5,4.0,4.1,2.2,2.2,3.9,6.3,2.7,2.5,9.1,2.5,2.0,0.6],[2.5,0.6,1.0,1.5,0.9,0.8,0.8,0.7,3.0,36.9,11.8,7.2,6.3,3.1,0.8,2.9,4.3,3.0,1.9,1.3,4.6,0.4,2.4,1.4],[0.9,0.5,0.3,0.2,0.3,0.4,1.3,0.8,3.7,37.6,11.7,9.6,7.6,4.1,1.0,1.2,2.2,3.7,2.0,1.3,5.8,1.1,1.9,0.8],[2.4,0.5,0.9,0.9,2.0,1.0,1.7,1.2,3.0,22.8,12.1,7.0,7.3,4.4,2.4,2.3,3.5,5.8,1.8,2.1,7.1,1.8,4.3,1.5],[1.2,1.2,0.8,1.1,1.3,0.2,0.9,1.0,3.6,36.6,11.8,6.9,5.5,3.4,2.2,1.9,3.1,4.5,1.9,1.4,4.5,1.1,2.8,0.7],[7.7,3.7,4.3,4.9,6.1,3.1,5.2,4.9,10.1,5.5,9.8,5.8,3.7,3.4,1.2,1.8,5.2,3.1,1.5,2.8,0.9,0.9,0.6,3.7],[6.5,1.1,0.0,3.2,0.0,1.1,0.0,1.1,9.7,8.6,7.5,2.2,2.2,1.1,4.3,6.5,8.6,3.2,4.3,5.4,3.2,16.1,3.2,1.1]],"mr":[[14,0,1,1,3,8,4,5,92,504,207,71,62,64,35,34,61,99,42,40,143,39,31,9],[46,11,19,28,17,15,15,12,54,675,216,132,115,57,14,53,78,54,34,24,84,7,43,26],[20,11,7,5,6,9,27,18,79,809,251,206,163,88,22,25,48,80,42,29,124,23,41,17],[42,9,16,16,34,17,30,21,51,392,207,121,126,75,42,39,60,100,31,36,122,31,73,26],[25,25,16,23,27,5,19,20,73,734,237,139,110,69,45,38,62,90,39,28,91,23,56,14],[25,12,14,16,20,10,17,16,33,18,32,19,12,11,4,6,17,10,5,9,3,3,2,12],[6,1,0,3,0,1,0,1,9,8,7,2,2,1,4,6,8,3,4,5,3,15,3,1]],"dt":[1569,1829,2150,1717,2008,326,93],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"20":["普丁強調俄羅斯忠實夥伴立場！伊朗打臉：根本沒支持多少","AI晶片案延燒！美超微盤前股價重挫27% 市值恐蒸發近50億美元"],"19":["杜拜原油狂漲近倍、中油含淚貼34億也擋不住 23日起汽柴油各調升1.8元及1.4元","巨大劉湧昌卸任磐石會會長 由台數科董事長廖紫岑今起接任"],"18":["《紐時》警告：中東軍事打擊無法「一勞永逸」 政治解決才是衝突終局","伊朗戰爭重擊川普政治優勢！《經濟學人》封面文章：三大「超能力」崩解、恐衝擊選舉"],"17":["日本船將可通過荷姆茲海峽？南韓官員：正與伊朗協商通行權","油價成川普致命傷！經濟學人：伊朗戰火燒向美國期中選舉、搖擺州「紅變藍」風險劇增"],"16":["宇樹科技IPO獲受理！擬募資42億、美團是第二大股東","OpenAI攜手四大諮詢巨頭加速企業AI落地：麥肯錫、BCG、埃森哲與凱捷全面合作"],"15":["伊朗利用拳王阿里「邊繩戰術」！雷根前顧問漢克：或對美國造成「致命一擊」","川普在MAGA群體支持率達100%？CNN民調數據引發正反面辯論"],"14":["聯合國支持川普和平委員會加薩重建計畫！秘書長呼籲伊朗解除海峽封鎖","今年來首度翻多！美元獲交易員看好 避險地位更穩了"],"13":["美聯準銀預警：荷姆茲海峽若封到6月 全球GDP成長率恐折損2.9個百分點","黃金創14年最大單周跌幅 為何不是伊朗戰爭避風港？"],"12":["美祭最新「穩油價」措施：SPR釋油4500萬桶、豁免伊朗海上石油","荷姆茲海峽通行前景未明 伊朗釋出有限開放訊號但仍強硬"],"11":["〈熱門股〉閎康矽光子營收爆發 單周飆22%創逾一年新高","荷姆茲海峽封鎖現轉機？伊朗：準備好放行日本船隻通過"],"10":["美國債飆破39兆美元 戰爭數周內創新高 專家警告選前恐達40兆","伊朗最高領袖穆吉塔巴釋強硬聲明"],"9":["盤中速報 - ether.fi大漲8.14%，報0.57美元","全球能源命脈受阻 南韓加入七國聲明 譴責伊朗封鎖荷姆茲海峽"],"8":["Fed官員坦言伊朗戰爭模糊前景 市場轉向押注升息","盤中速報 - ANKR大漲22.41%，報0.0059美元"],"7":["營收速報 - 2026年3月21日台股中小型公司2月營收一覽（新增2家）","戰爭衝擊民生！汽油每加侖逼近4美元 美國喬治亞州宣布暫停汽油稅60天"],"6":["〈貴金屬盤後〉黃金連八黑、單周重挫近10% 美國增兵中東傳言讓市場更焦慮升息 ","川普：接近達成對伊朗五大戰略目標 考慮「逐步縮減」軍事行動"],"5":["〈能源盤後〉伊拉克對外資油田啟動不可抗力 原油飆至近4年高點 單周漲近9%","美超微共同創辦人遭美起訴後 已辭去董事職務 立即生效！"],"4":["轉機？Snap股價腰斬創一年新低 分析師齊砍目標價 但RSI浮現超賣訊號","外匯速報 - 歐元/日元(EURJPY) 大漲0.79%，報184.2元"],"3":["盤中速報 - 科林研發(LRCX-US)大跌5.02%，報222.25美元","川普：美軍可隨時結束對伊行動 但將持續施壓防止重建"],"2":["盤中速報 - 泰瑞達(TER-US)大跌5.04%，報287.15美元","盤中速報 - 艾司摩爾(ASML-US)大跌5.01%，報1298美元"],"1":["盤中速報 - 萊迪思半導體(LSCC-US)大跌5.17%，報90.01美元","盤中速報 - 美光科技(MU-US)大跌5.15%，報421.39美元"],"0":["輝達與Groq合作遭關切 美參議員質疑規避反壟斷審查","鉅亨速報 - Factset 最新調查：響尾蛇能源(FANG-US)EPS預估上修至10.8元，預估"],"23":["盤中速報 - 星座能源(CEG-US)大跌5.02%，報300.57美元","中東戰事推升通膨疑慮！美債重挫 Fed今年升息機率逼近五成"],"22":["盤中速報 - 費城半導體大跌2%，報7705.7點","盤中速報 - Aptos大漲8.01%，報1.01美元"],"21":["盤中速報 - Atlassian Corporation - Class A(TEAM-US)大跌5","盤中速報 - 安謀控股公司(ARM-US)大漲5.76%，報137.3美元"]}},{"n":"MoneyDJ","d":"moneydj.com","g":"B","gl":"財經投資","ta":9619,"dc":20,"mp":[[0.3,0.0,0.0,0.0,0.0,1.0,1.5,4.7,8.1,8.8,6.7,3.6,3.0,4.4,6.3,7.4,8.1,11.4,10.0,7.6,3.3,2.6,0.9,0.4],[0.0,0.0,0.0,0.0,0.0,1.4,0.9,3.3,5.3,8.6,6.5,7.8,3.6,3.6,5.4,13.2,14.3,10.7,5.7,3.8,3.4,1.3,0.4,0.7],[0.0,0.0,0.0,0.0,0.0,2.0,1.2,4.4,8.0,7.9,6.3,6.8,3.3,2.9,5.2,8.1,9.6,8.0,8.4,7.4,4.6,3.2,1.9,1.0],[0.1,0.0,0.0,0.1,0.0,1.8,1.1,3.8,7.4,6.8,7.2,5.5,2.9,2.6,9.1,7.7,8.7,9.0,6.0,6.5,3.5,4.1,4.8,1.3],[0.3,0.0,0.1,0.3,0.0,0.7,0.6,5.0,8.0,8.1,6.7,6.1,2.7,5.1,9.0,9.6,8.4,8.7,8.0,5.5,3.2,3.0,0.3,0.6],[0.0,1.7,0.0,1.7,8.3,0.0,1.7,28.3,1.7,3.3,1.7,10.0,1.7,1.7,0.0,1.7,11.7,1.7,10.0,5.0,6.7,0.0,0.0,1.7],[0.0,0.0,2.5,0.0,0.0,0.0,0.0,17.5,10.0,5.0,0.0,2.5,0.0,5.0,5.0,2.5,5.0,2.5,2.5,15.0,5.0,2.5,0.0,17.5]],"mr":[[5,0,0,0,0,18,28,89,151,165,126,67,57,83,119,139,151,213,188,143,62,48,16,7],[0,0,0,0,0,22,14,50,81,131,99,118,55,54,82,200,217,162,87,58,52,20,6,11],[1,1,0,0,0,42,24,91,165,162,129,140,67,59,107,166,197,164,174,152,94,66,39,21],[2,1,0,3,0,38,23,79,154,141,150,114,60,55,190,160,181,187,125,136,72,86,99,28],[6,0,1,5,0,14,11,99,159,161,132,120,54,101,179,191,167,173,159,108,63,60,5,12],[0,1,0,1,5,0,1,17,1,2,1,6,1,1,0,1,7,1,6,3,4,0,0,1],[0,0,1,0,0,0,0,7,4,2,0,1,0,2,2,1,2,1,1,6,2,1,0,7]],"dt":[1875,1519,2061,2084,1980,60,40],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"11":["紫金堂 本公司董事會決議召開民國115年股東常會相關事宜","正隆 澄清115/03/21工商時報報導"],"10":["台端 依臺灣證券交易所股份有限公司臺證上一字第1121801204號函辦理","小米新SU7起售價21.99萬人幣 34分鐘鎖單1.5萬台"],"7":["大研生醫* 公告本公司股票面額由「新台幣10元」變更為「新台幣1元」，公告期間：114年12月22日","合騏 公告本公司股票面額由「新台幣10元」變更為「新台幣2.5元」"],"6":["渣打報告：全球仍需注資6.5兆美元推動循環經濟","日本對美第2波投資：總額逾\"11兆\"、興建SMR"],"19":["久威 公告114年度財務報告董事會預計召開日期為115年03月30日","汎銓 公告本公司不調整配息率"],"18":["&#21488;&#36948;&#38651; &#26412;&#20844;&#21496;&","志聖認購東捷私募普通股2千萬股，計約10.2億元"],"17":["慕康生醫 公告本公司董事會修正決議辦理私募普通股及私募國內無擔保可轉換公司債案","合水先進 補充公告本公司115/3/11訂定之民國114年第四季現金股利除息基準日相關事宜(增列其他"],"16":["台灣高鐵 新增高鐵列車組採購案(契約編號E321及E322)第六次增補","台塑2/5~3/20取得生產用之機械設備一批，計約3.28億元"],"15":["易通展4/30股東會新增議案(更正)","瑞峰董事會決議私募普通股2000萬股，每股51元"],"14":["華義 本公司股票面額變更相關事宜","日成-KY 公告本公司114年現金增資全體董事放棄認購股數達得認購股數二分之一以上，並洽特定人認購之"],"13":["Mercedes Benz、Siemens分別在匈牙利投資設立及擴大研發中心","綠電4/30股東會增列議案(更正)"],"12":["遠東SOGO舉辦「春之日本展」，有望帶動消費動能","打破產能瓶頸？Anduril無人機提前投產、揭秘訣"],"9":["耀登定調衛星產品出貨元年，盼動能漸發酵","益張 114年綜合損益表，每股盈餘5.97元"],"8":["創見/凌航1月EPS接近上季水準 鈺創2月較上季逾倍增","中東戰事推升油價 經部：核電大國也無法置身事外"],"5":["日本股市今日因「春分」休市一天","楊金龍：房市僅是軟著陸開頭，非大幅放寬管制時機"],"23":["元大台灣高股息低波動ETF基金季配息115年第一季收益分配","元大10年期以上美元投資級醫療保健債券ETF基金季配息115年第一季收益分配"],"21":["凱碩 代重要子公司Humax Networks, Inc.公告股東會解除董事競業禁止之限制","凱碩 代重要子公司Humax Networks, Inc.公告股東會續任監事名單"],"20":["上海商銀股利：現金1.8元、股票0.1元","上海商銀董事會決議辦理資本公積轉增資發行新股48,616,031股"],"0":["敦泰 說明媒體報導","環宇-KY 114年綜合損益表，每股盈餘0.15元"],"22":["麗嬰房 (更正)公告本公司資金貸與金額達「公開發行公司資金貸與及背書保證處理準則」第二十二條第一項第","台泥 本公司受邀參加富邦證券舉辦之法人座談會"],"2":["美時 114年綜合損益表，每股盈餘18.14元","迎輝 公告本公司董事會決議召開115年股東常會"],"3":["迎輝 公告本公司累積虧損達實收資本額二分之一","迎輝 公告本公司董事會決議不分配員工酬勞及董事酬勞"],"4":["碩網114年獲利8170萬元，每股稅後2.65元","碩網股利：現金1.8元"],"1":["IET-KY 本公司有價證券近期多次達公布注意交易資訊標準，故公告相關訊息，以利投資人區別暸解","鴻碩 代子公司「鴻銘智能股份有限公司」公告簽訂業務合作協議"]}},{"n":"工商時報","d":"ctee.com.tw","g":"B","gl":"財經投資","ta":4968,"dc":20,"mp":[[0.3,0.1,5.7,3.8,0.0,0.0,1.5,1.7,2.8,8.4,6.8,2.3,3.9,5.1,7.0,5.5,7.9,9.6,7.3,5.2,5.1,4.3,5.1,0.6],[0.7,0.1,5.4,3.6,0.0,0.0,1.3,1.3,1.0,8.4,4.2,9.0,6.4,4.5,4.7,7.3,9.8,8.7,5.0,4.4,6.5,3.6,2.9,1.1],[0.4,0.2,3.3,3.3,0.0,0.0,0.7,1.8,3.6,10.1,5.9,6.0,6.0,6.2,5.3,5.4,8.4,9.1,6.1,5.1,5.3,3.6,3.0,1.3],[0.4,0.1,4.8,4.6,0.0,0.0,1.6,2.0,3.7,5.2,6.1,8.1,4.2,6.2,6.7,6.6,7.1,6.2,6.0,4.7,4.6,4.8,5.0,1.1],[0.6,0.0,3.4,5.1,0.0,0.0,0.4,3.1,4.5,6.7,7.6,6.3,6.3,5.3,8.7,4.3,8.0,6.3,5.8,5.3,4.1,3.3,3.9,1.1],[1.0,0.3,0.0,7.7,0.0,0.0,0.3,4.4,5.4,2.3,4.4,10.6,9.8,6.2,6.2,4.6,7.0,7.7,7.2,4.9,3.9,3.9,0.8,1.5],[1.0,0.3,0.0,10.4,0.0,0.0,0.7,4.5,6.6,5.2,6.6,9.0,6.6,5.5,5.2,9.0,7.6,4.2,3.5,2.4,2.8,5.2,3.1,0.7]],"mr":[[2,1,45,30,0,0,12,13,22,66,53,18,31,40,55,43,62,75,57,41,40,34,40,5],[6,1,45,30,0,0,11,11,8,69,35,74,53,37,39,60,81,72,41,36,54,30,24,9],[4,2,30,30,0,0,6,16,33,91,53,54,54,56,48,49,76,82,55,46,48,33,27,12],[4,1,45,43,0,0,15,19,34,48,57,75,39,58,62,61,66,58,56,44,43,45,46,10],[5,0,29,43,0,0,3,26,38,57,64,53,53,45,74,36,68,53,49,45,35,28,33,9],[4,1,0,30,0,0,1,17,21,9,17,41,38,24,24,18,27,30,28,19,15,15,3,6],[3,1,0,30,0,0,2,13,19,15,19,26,19,16,15,26,22,12,10,7,8,15,9,2]],"dt":[785,826,905,929,846,388,289],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"21":["中國祭出稀土制裁大棒 前兩月對美出口下滑逾2成","春分就要這味！新北春紛節 聽歌、吃美食超 chill"],"20":["賴清德要重啟核電 廢核平台狠批：堅決反對一意孤行","射程近四千公里！伊朗首朝印度洋英美基地射飛彈  軍事實力恐超檯面資訊"],"19":["沒有SOP、也無法複製！賴總統挺地方創生 具創意就有產業能量","小麥麵食文化節熱鬧登場！小小麥鄉人探索大雅麥田美景"],"18":["臺企銀攜手新光銀 主辦新潤建設、隆甲建設、金剛資產及辰鴻投資51.271億聯貸案","李希特《抽象畫》 、常玉《毯上的曲腿馬》首登拍場 估價億元起跳"],"17":["中東戰火未見停戰 PIMCO示警：全球經濟成長恐迎下行風險","抽iPhone 17！行動郵局APP將破千萬下載 完成任務送好禮"],"16":["蘋果CEO庫克評中國市場與供應鏈「至關重要」","職缺破千！高雄開春大徵才登場 媒合率破5成"],"15":["避險資產竟變提款機？黃金單周重摔11％  華爾街解析4大原因","塑膠袋沒了？中東戰局衝擊 五金業者：庫存賣完就斷貨"],"14":["核二核三重啟有譜？賴清德證實：台電已準備重啟程序","退休族買車先避雷！老師傅勸退11款別買：養車太燒錢"],"13":["陸商務部等部門推新政搶國際遊客入境消費","美伊衝突引通膨！蔣萬安籲中央：借鏡民國60年能源危機因應"],"12":["川普對伊朗戰爭說法多次轉彎 最新美方目標與時程演變一次看懂","年領千萬獎助！台大推「椰林學者」計畫 狂砸1億留人才"],"11":["油價警報大響！伊朗戰事恐難平息 布蘭特原油衝破112美元","推特收購官司逆轉！馬斯克被裁定詐欺股東 天價賠償恐來了"],"10":["最新報告顯示南海表層海水符合第一類海水水質標準","《半導體》AI伺服器帶動需求爆發 廣閎科：MOSFET供不應求"],"9":["AI熱、油價飆、股市震盪 現在該買還是等？30年美股操盤手揭獲利關鍵","頂大不再是高薪保證了？矽谷最新觀察：AI時代最搶手的是這種人"],"8":["「算電協同」  陸央企7900億入疆   築牢能源安全雙保險","意外險必要嗎？失能風險才是最大黑洞！30～50歲保險「這樣配」"],"7":["科技公司不再中立？Palantir公開支持以色列的背後","川普稱「不想停火」 但美軍接近達標、將評估降級攻勢"],"6":["牛奶該喝全脂好還低脂好？營養師曝答案","美股｜油價回落 3大指數續黑 美光挫3.9％ 台積電ADR小跌"],"3":["聯發科打進Macbook供應鏈","宏碁砸15億建集團物流中心"],"0":["桃園遊覽車事故19傷 公路局將查核業者","董雲裳：美陸高層交往  有助建立機制保持溝通"],"23":["與法國總統外事顧問溝通中東局勢  王毅提3個當務之急","富邦華一銀行杭州分行開業 為首家進駐杭州的台資銀行"],"22":["SOGO春季最大規模日本展登場 集結百家品牌衝首季業績","AI監測揭柴山獼猴活動高峰 7、8月出沒頻率最高與餵食行為有關"],"2":["日本｜東京櫻花較去年提早5天開花","日本｜企業清晰發展計畫能對抗短期激進投資人"],"1":["海南封關三個月看變化首季洋浦港多項指標實現全面增長","富邦金2025年賺1209億元  韓蔚廷：股利政策不變、配發率4到5成"]}},{"n":"優分析","d":"uanalyze.com.tw","g":"B","gl":"財經投資","ta":774,"dc":18,"mp":[[24.1,0.5,0.0,0.0,0.0,0.0,0.0,0.0,0.5,0.5,1.4,0.0,0.0,0.0,0.0,0.5,0.0,40.1,9.9,12.7,7.5,1.9,0.5,0.0],[3.1,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.6,0.0,0.0,0.8,3.1,0.8,0.0,0.8,1.6,47.7,11.7,9.4,19.5,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,5.2,0.7,1.5,0.7,0.7,0.7,0.0,0.0,0.7,41.0,13.4,9.7,14.9,7.5,2.2,0.7],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3.4,1.7,0.8,0.8,0.8,0.0,0.8,0.0,0.8,45.4,8.4,17.6,13.4,3.4,0.0,2.5],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.2,0.0,0.6,0.0,8.7,0.6,0.0,2.3,0.0,51.7,12.2,11.0,8.1,2.3,0.6,0.6],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,75.0,25.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,40.0,0.0,20.0,20.0,20.0,0.0,0.0,0.0,0.0,0.0,0.0]],"mr":[[51,1,0,0,0,0,0,0,1,1,3,0,0,0,0,1,0,85,21,27,16,4,1,0],[4,0,0,0,0,0,0,0,2,0,0,1,4,1,0,1,2,61,15,12,25,0,0,0],[0,0,0,0,0,0,0,0,7,1,2,1,1,1,0,0,1,55,18,13,20,10,3,1],[0,0,0,0,0,0,0,0,4,2,1,1,1,0,1,0,1,54,10,21,16,4,0,3],[0,0,0,0,0,0,0,0,2,0,1,0,15,1,0,4,0,89,21,19,14,4,1,1],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1,1,1,0,0,0,0,0,0]],"dt":[212,128,134,119,172,4,5],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-21"],"6":["03-08","03-15"]},"ht":{"21":["萬鈞法人視角觀點3｜不是海鮮! 科技圈瘋養的「小龍蝦」到底紅什麼？一文看懂黃仁勳力推的 AI 秘密武","〈台幣〉熱錢出走股匯雙殺！貶逾1角收31.953元 探逾10個月新低 | 優分析UAnalyze -"],"20":["萬鈞法人視角觀點2｜AI算力大爆發竟引發「內湖塞車」？沈萬鈞：光進銅退是唯一活路！揭密1.6T傳輸商","15 年來最慘缺貨潮！沈萬鈞揭秘：記憶體已跳脫傳統循環，AI 讓「記憶體難民」即將出現？ | 優分析"],"22":["川普推全國AI監管框架　強化競爭力並防堵州法分歧 | 優分析UAnalyze - 理解市場．參與市場","〈富邦金法說〉富壽接軌八大重點一次看！調整後淨值大增36% 外價金逾1440億元業界最高 | 優分析"],"19":["桃園新光三越華麗轉身！臺企銀攜手新光銀51億聯貸案 啟動735戶都更案 | 優分析UAnalyze ","賴清德：持續推動花東鐵路發展 促進花東繁榮、雙軌電氣化預計2030年通車 | 優分析UAnalyze"],"18":["台股紅包行情發威！全體券商前2月狂賺逾400億元 年增近2倍 | 優分析UAnalyze - 理解市","外資續賣400億元 砍DRAM雙雄轉進低基期股 單周賣超1652億元 | 優分析UAnalyze -"],"17":["〈外銷訂單〉前2月1407億元創同期新高 2月接單亮麗638億元刷13紅 | 優分析UAnalyze","集邦：零組件成本飆漲帶動提前備貨 三月電視與螢幕面板價格續揚 | 優分析UAnalyze - 理解市"],"15":["聯合利華洽談將旗下食品業務售予McCormick | 優分析UAnalyze - 理解市場．參與市場","韓國強調LNG供應無虞　庫存高於法定水位、核能補位強化能源安全 | 優分析UAnalyze - 理解"],"13":["地緣政治升溫，黃金卻連跌6天！避險資產出現什麼轉折？ | 優分析UAnalyze - 理解市場．參與","阿聯能源基礎設施受襲重創：原油產量減半，荷姆茲海峽封鎖衝擊全球供應鏈 | 優分析UAnalyze -"],"12":["馬斯克：特斯拉與SpaceX AI持續大單採購輝達晶片　自研AI5同步推進 | 優分析UAnalyz","建滔化工集團減持CCL子公司建滔積層板　擬套現約27億港元 | 優分析UAnalyze - 理解市場"],"11":["證實「Hunter Alpha」為小米自研模型　對標DeepSeek | 優分析UAnalyze -","【DeepSeek再出殺招？】神秘模型「Hunter Alpha」突襲登場　市場瘋猜V4測試版曝光 "],"10":["輝達獲中方放行H200銷售　加碼布局推論晶片搶攻中國AI市場 | 優分析UAnalyze - 理解市","三星電子計畫於 2027 年下半年起在德州工廠量產特斯拉晶片 | 優分析UAnalyze - 理解市"],"9":["上詮 (3363) 的 CPO 夢想何時落地？2026 年第三季將是實績兌現的關鍵分水嶺 | 優分析","聯準會釋出偏鷹訊號　美股重挫、三大指數同步收低 | 優分析UAnalyze - 理解市場．參與市場"],"8":["蘋果印度產值超標80%　FY26產量衝5,500萬支、全球占比逼近25% | 優分析UAnalyze","史賽克遭網攻影響61國營運　已完成控制、訂單與出貨逐步恢復 | 優分析UAnalyze - 理解市場"],"16":["油價反彈逾3%：荷姆茲海峽持續受阻加劇供應緊張，中東原油創新高 | 優分析UAnalyze - 理解","韓股創兩週新高：輝達合作題材發酵，三星與車用股領漲 | 優分析UAnalyze - 理解市場．參與市"],"0":["蔡明忠二度參賽萬金石馬拉松 富邦提供碳權抵換關注氣候變遷 | 優分析UAnalyze - 理解市場．","法巴產險驚傳撤出台灣 金管會：尊重業者決定 確保員工保戶權益 | 優分析UAnalyze - 理解市"],"23":["13家金控前2月海賺1447億元創新高 這3家獲利翻倍跳 | 優分析UAnalyze - 理解市場．","上福全球2025年虧損近一個股本 由公積配息0.5元4/16除息 | 優分析UAnalyze - 理"],"14":["一場中東衝突，帶來 AI 資料中心新變數？關鍵原料供應成焦點 | 優分析UAnalyze - 理解市"],"1":["阿布達比使館區遭波及 杜拜港口起火 中東報復攻擊擴大衝擊貿易樞紐 | 優分析UAnalyze - 理"]}},{"n":"今周刊","d":"businesstoday.com.tw","g":"C","gl":"雜誌深度","ta":600,"dc":20,"mp":[[0.0,1.2,0.0,0.0,0.0,0.0,0.0,1.2,1.2,7.3,18.3,7.3,6.1,1.2,2.4,15.9,15.9,11.0,9.8,1.2,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,2.0,6.1,5.1,12.2,8.2,3.1,6.1,13.3,11.2,17.3,12.2,1.0,1.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.7,0.7,2.0,16.2,15.5,11.5,2.0,6.8,11.5,11.5,16.9,3.4,0.0,0.0,0.7,0.0,0.7],[0.9,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.8,6.2,13.3,14.2,8.8,1.8,4.4,12.4,6.2,13.3,13.3,1.8,0.0,0.9,0.9,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,6.8,8.7,12.6,12.6,1.0,7.8,7.8,9.7,18.4,10.7,1.9,0.0,0.0,1.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3.4,3.4,13.8,17.2,0.0,0.0,6.9,13.8,17.2,6.9,13.8,3.4,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,14.8,18.5,7.4,0.0,7.4,7.4,7.4,7.4,18.5,7.4,0.0,0.0,3.7,0.0]],"mr":[[0,1,0,0,0,0,0,1,1,6,15,6,5,1,2,13,13,9,8,1,0,0,0,0],[0,0,0,0,0,0,0,1,2,6,5,12,8,3,6,13,11,17,12,1,1,0,0,0],[0,0,0,0,0,0,0,1,1,3,24,23,17,3,10,17,17,25,5,0,0,1,0,1],[1,0,0,0,0,0,0,0,2,7,15,16,10,2,5,14,7,15,15,2,0,1,1,0],[0,0,0,0,0,0,0,0,1,7,9,13,13,1,8,8,10,19,11,2,0,0,1,0],[0,0,0,0,0,0,0,0,1,1,4,5,0,0,2,4,5,2,4,1,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,4,5,2,0,2,2,2,2,5,2,0,0,1,0]],"dt":[82,98,148,113,103,29,27],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"18":["【魏哲家 機器人】中國機器人「跳來跳去只是好看」魏哲家：95%大腦靠台積電做！被問勞工局罰款排第7「","【濕疹 T細胞淋巴瘤】長年濕疹治不好竟癌末，29歲女生：我不該等癌細胞擴散全身才被發現…T細胞淋巴瘤"],"17":["【重啟核電 賴清德】台電核二、核三準備重啟程序中，最快月底送核安會審議！會因AI缺電？賴清德：203","【育嬰留職停薪 育嬰假】彈性育嬰留停新制上路！以日為單位「最多30天」⋯兩個小孩分開給假？雙寶家庭爸"],"15":["【荷姆茲海峽 日本】荷姆茲海峽解封露曙光⋯伊朗有條件開放各國協商，日本相關船隻有望率先通過！油價有望","【丹麥 謝金河】以色列開戰股市不跌反漲！歐洲這國把台灣列中國公民，慘淪全球最悲情…謝金河：三國命運大"],"14":["【謝金河 美超微】美超微涉走私震撼科技圈…涉案人皆來自台灣、對這3大佬是警訊！謝金河：台灣很多企業老","【磁暴 太陽風暴】中度磁暴15小時襲擊中！衛星導航、無線電通訊恐受影響…看不見的風暴對健康有傷？醫教"],"11":["【AZ疫苗 漸凍症】王浩一心梗猝逝不到1年，37歲愛女走了⋯家屬認疑打AZ疫苗後罹漸凍症「撐不住曾想","【川普 油價】川普制裁伊朗石油豁免30天，1.4億桶釋出救市！怒批北約紙老虎、擬逐步減少軍事行動：5"],"10":["【美超微 晶片】美超微走私晶片賣中，股價崩33% 、市值蒸發1920億6年最慘⋯共同創辦人辭董事、台","台灣經典賽贏韓國、委內瑞拉擊退美國…謝金河：打敗南韓不再是夢，棒球場上比拚，背後也可能代表著國運 -"],"16":["【安寧照護 善終】安寧醫師16年陪近萬病人離世，一顆楊桃讓臨終爺爺人生最後3天樂開懷，她體悟：生命最","【好市多優惠 好市多體驗券】好市多體驗會員！沒給年費也能進來，體驗券怎麼拿？Costco免費4服務能"],"12":["【退休理財 退休生活】60歲突奢華旅遊、搭商務艙：現在花錢是享受、晚了變醫藥費！老總退休20年才懂：","【華邦電 南亞科】旺宏(2337)為何又見第5根漲停、華邦電(2344)和南亞科(2408)卻砍跌停"],"9":["【美超微 美超微走私輝達晶片】美超微高層走私輝達AI晶片到中國，共同創辦人、台灣總座遭起訴！進帳75","【國際總經 習近平】網紅、宮廟、里長…中共密謀「讓台灣反對台灣」！ 專家示警： 10大手段瓦解敵我意"],"21":["【有真與有真 兒童性暴力】絕對不是你的錯！《有真與有真》音樂劇切入兒童性暴力「戲劇治療」：盼有這樣經","【糖尿病 健保署】糖尿病患者逾300萬人，健保署、Google 北醫推糖尿病「精準衛教」…全台40家"],"13":["嘉義市智慧地政防詐再升級 第二季上線免臨櫃申請 智慧城市展率先亮相 - 今周刊","【群聯 潘健成】贏家臉譜1 潘健成：別人做加工、買賣 我們賣方案創造價值 群聯靠「AI儲存」敲開新藍"],"8":["離岸風電進入科學數據化時代　解密發電模範生海能風電的致勝秘訣 - 今周刊","信義房屋再創產業新標竿　房仲新人月薪上看70K享高手同行培訓 - 今周刊"],"19":["【全聯 麻糬 全聯 紅豆抹茶大福】年賣600萬盒、銷售額破3億！全聯搶攻頭牙「麻糬商機」 這口味最受","【荷莫茲海峽 不可抗力】中東戰火衝擊石化供應鏈...荷莫茲海峽受阻、料源告急，台塑化宣布不可抗力：乙"],"7":["【輝達GTC 黃仁勳】輝達GTC／極簡NemoClaw養龍蝦、AI晶片兆美元商機、新Groq 3 L","國際戰火炸出千點震盪！台股「海盜船」行情怎解？鎖定「高息＋成長」雙引擎，這檔ETF年化配息衝破14%"],"22":["【2026行事曆 2026連假】2026行事曆連假盤點！清明節、五一勞動節、端午節放幾天？3個國定假","【沙子宸 大谷翔平】WBC台日大戰／沙子宸是誰？一上場就讓大谷翔平出局！大聯盟等級轉速、非科班出身如"],"0":["公私協力推動治理革命！ 高雄以大數據與 AI 構築城市數位韌性 透過主權AI 、智慧治理、創新生態系"],"20":["【台灣 新生兒 台灣 少子化】台灣總人口連26個月負成長！ 2月新生兒數跌破7千人，創歷史最低..."],"23":["【贈與稅 稅率 贈與稅免稅額】2026贈與稅稅率、免稅額！跨年度贈2352萬0稅金…贈與稅額度、計算"],"1":["【法國 SiPearl】5年級法國大叔竟是歐洲拼AI運算的希望！為何他近六年來勤跑竹科？故事要從20"]}},{"n":"遠見雜誌","d":"gvm.com.tw","g":"C","gl":"雜誌深度","ta":388,"dc":20,"mp":[[5.1,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2.6,12.8,15.4,6.4,5.1,5.1,9.0,10.3,20.5,6.4,0.0,0.0,1.3,0.0,0.0],[1.7,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3.4,10.3,6.9,25.9,3.4,5.2,5.2,8.6,6.9,17.2,1.7,3.4,0.0,0.0,0.0],[1.3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2.7,1.3,10.7,18.7,8.0,4.0,1.3,5.3,16.0,8.0,13.3,5.3,2.7,0.0,1.3,0.0],[1.1,0.0,0.0,0.0,0.0,0.0,0.0,1.1,1.1,1.1,13.5,10.1,18.0,5.6,12.4,11.2,6.7,2.2,11.2,2.2,1.1,1.1,0.0,0.0],[1.4,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2.9,11.4,12.9,12.9,5.7,5.7,10.0,11.4,12.9,8.6,2.9,1.4,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,8.3,25.0,0.0,8.3,16.7,0.0,8.3,0.0,0.0,16.7,0.0,8.3,0.0,0.0,8.3,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,16.7,0.0,0.0,0.0,0.0,33.3,0.0,16.7,16.7,16.7,0.0,0.0,0.0,0.0,0.0,0.0,0.0]],"mr":[[4,0,0,0,0,0,0,0,0,2,10,12,5,4,4,7,8,16,5,0,0,1,0,0],[1,0,0,0,0,0,0,0,0,2,6,4,15,2,3,3,5,4,10,1,2,0,0,0],[1,0,0,0,0,0,0,0,2,1,8,14,6,3,1,4,12,6,10,4,2,0,1,0],[1,0,0,0,0,0,0,1,1,1,12,9,16,5,11,10,6,2,10,2,1,1,0,0],[1,0,0,0,0,0,0,0,0,2,8,9,9,4,4,7,8,9,6,2,1,0,0,0],[0,0,0,0,0,0,0,1,3,0,1,2,0,1,0,0,2,0,1,0,0,1,0,0],[0,0,0,0,0,0,0,1,0,0,0,0,2,0,1,1,1,0,0,0,0,0,0,0]],"dt":[78,58,75,89,70,12,6],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"16":["伊朗石油與台灣半導體：資源詛咒或戰略優勢 | 遠見雜誌","國民黨北市議員李傅中武涉詐領助理費！檢調兵分5路搜索 | 遠見雜誌"],"11":["中國2027不攻台了？美情報直指「北京避免動武」，葛來儀點出原因 | 遠見雜誌","奇襲伊朗川普引「珍珠港」開玩笑，高市早苗尷尬反應曝！美日峰會談了什麼？ | 遠見雜誌"],"18":["《高雄有顆藍寶石》帶著觀眾回到豬哥亮的黃金年代！見證秀場文化的燦爛傳奇 | 遠見雜誌","全球自由度報告：台灣93分亞洲第2、美國跌至81分與南非同分 | 遠見雜誌"],"17":["你吃的苦瓜胜肽有活性定量嗎？苦瓜胜肽挑選指南 | 遠見雜誌","鸞九辰 | 遠見雜誌 合作專欄"],"15":["黃仁勳罕見談台海！籲美國勿挑釁中國「應展現克制」 | 遠見雜誌","360° MOBILITY Mega Shows預登啟動，搶占淨零商機，鏈結全球兆元採購 | 遠見雜"],"14":["當人生來到「菜尾」：有形物質、無形情感都走向斷捨離的減法之旅 | 遠見雜誌","讓大腦有「儀式感」更專注！成功人士都這樣安排飲食與工作 | 遠見雜誌"],"13":["耶魯大學神經與精神學博士：6個生活訣竅增強「復原力」 | 遠見雜誌","孩子未獲滿足的「一項需求」，成年時將釀成3大問題 | 遠見雜誌"],"12":["印尼「獨角獸咖啡」來了！Kopi Kenangan打趴星巴克，什麼來頭？ | 遠見雜誌","美伊戰火有轉機？川普告誡以色列「勿再攻擊伊朗能源設施」 | 遠見雜誌"],"10":["3/20土地公生日頭牙補財庫：拜拜也有先後順序！別對神明失禮才有好運 | 遠見雜誌","44歲中年男子尾道日記：景色更美的地方很多，我為何愛上「這小鎮」 | 遠見雜誌"],"20":["升主管好開心？美國商管大師：5件領導者無法逃避的「苦差事」 | 遠見雜誌","LINE付費訂閱制來了！瞄準換機焦慮與社交痛點，「LINE Premium」165元擁5大新功能 |"],"19":["央行利率連8凍、信用管制鬆綁！自然人第2戶貸款成數上限放寬至六成 | 遠見雜誌","2026股東會紀念品：聯電紀念品曝光！領取資格、最後買進日與零股攻略 | 遠見雜誌"],"22":["2026春假日韓旅遊神卡大評比：最高11%回饋！無腦刷、高回饋優缺點有哪些？ | 遠見雜誌"],"0":["「跳脫舒適圈」快變另類毒雞湯？心理師教你用「冒險」重建安全感 | 遠見雜誌","轉職時你的「名聲」禁得起打聽嗎？資深人資：別輕忽4件傷人害己的事 | 遠見雜誌"],"8":["輝達GTC秀肌肉！創博推「四位一體」機器人控制器，今年訂單大增六成 | 遠見雜誌","第三人生啟動！30歲就可參加，教育部「30+大學」計畫有哪些學校？怎麼入學？ | 遠見雜誌"],"9":["ChatGPT 5.4超越Gemini！編輯PPT怎麼用？ | 遠見雜誌","如何尋找完美工作？WBC捷克投手薩托利亞教我的事 | 遠見雜誌"],"7":["她說「晶片育兒」神話破滅？新竹縣出生人口十年變化一表看 | 遠見雜誌","老年健康不失智！涉及高度複雜技能，研究：賞鳥者大腦認知功能較好 | 遠見雜誌"],"21":["美伊開戰每分鐘燒2000萬！相當於22天花光台灣國防預算 | 遠見雜誌","身體明明很累卻睡不著？大腦無法關機，新研究揭慢性失眠機制 | 遠見雜誌"]}},{"n":"天下雜誌","d":"cw.com.tw","g":"C","gl":"雜誌深度","ta":281,"dc":20,"mp":[[0.0,0.0,9.4,0.0,0.0,3.1,9.4,0.0,0.0,1.6,10.9,0.0,9.4,0.0,9.4,7.8,7.8,9.4,10.9,4.7,4.7,0.0,1.6,0.0],[0.0,1.2,1.2,1.2,1.2,2.4,3.6,0.0,0.0,1.2,2.4,6.0,7.2,1.2,7.2,16.9,8.4,14.5,9.6,1.2,7.2,4.8,1.2,0.0],[0.0,0.0,7.3,0.0,0.0,0.0,9.8,0.0,0.0,0.0,9.8,4.9,14.6,2.4,7.3,2.4,0.0,17.1,12.2,2.4,2.4,2.4,4.9,0.0],[6.2,0.0,8.3,0.0,2.1,2.1,6.2,0.0,2.1,0.0,4.2,4.2,0.0,2.1,0.0,6.2,6.2,10.4,16.7,8.3,4.2,6.2,2.1,2.1],[6.5,0.0,0.0,0.0,3.2,0.0,6.5,0.0,0.0,0.0,3.2,3.2,0.0,0.0,12.9,0.0,12.9,6.5,16.1,9.7,3.2,9.7,3.2,3.2],[0.0,0.0,10.0,0.0,0.0,0.0,0.0,0.0,10.0,0.0,0.0,30.0,0.0,10.0,0.0,0.0,0.0,20.0,10.0,0.0,0.0,10.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,50.0,0.0,0.0,50.0,0.0,0.0,0.0,0.0,0.0,0.0]],"mr":[[0,0,6,0,0,2,6,0,0,1,7,0,6,0,6,5,5,6,7,3,3,0,1,0],[0,1,1,1,1,2,3,0,0,1,2,5,6,1,6,14,7,12,8,1,6,4,1,0],[0,0,3,0,0,0,4,0,0,0,4,2,6,1,3,1,0,7,5,1,1,1,2,0],[3,0,4,0,1,1,3,0,1,0,2,2,0,1,0,3,3,5,8,4,2,3,1,1],[2,0,0,0,1,0,2,0,0,0,1,1,0,0,4,0,4,2,5,3,1,3,1,1],[0,0,1,0,0,0,0,0,1,0,0,3,0,1,0,0,0,2,1,0,0,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0]],"dt":[64,83,41,48,31,10,4],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"21":["基層公務員辛酸血淚：民代施壓難做事、認真同仁反而被排擠｜天下雜誌","獨家專訪台達電鄭平》解決AI缺電　微電網還不夠，還要做電池發電｜天下雜誌"],"17":["史上最強會長蔡其昌畢業倒數！帶球迷找回熱血與相信後，誰能接棒？｜天下雜誌","人生專家：簡單3個步驟，找出你對生命的熱情所在｜天下雜誌"],"11":["美超微暴跌33%！妖股隕落，創辦人被控走私輝達晶片到中國，發生什麼事？｜天下雜誌","AI走進數學課！直擊國教院首個AI教育研究案　龍埔國小「差異化」教學怎麼做？｜天下雜誌"],"23":["心理學家：3個「壞」習慣代表你EQ很高｜天下雜誌","Z世代畢業生為什麼工作幾個月就被解雇？老闆：問題在態度｜天下雜誌"],"22":["黃金白銀又暴跌，為什麼避險失靈？誰在賣？｜天下雜誌","誰逼走公務員？文官淪為社群小編，離退、缺額創新高　解讀全台「缺公」真相｜天下雜誌"],"20":["揮別28年教職、迎向嶄新人生，校長退休第一年卻體悟：沒想到上班工作有這麼多好處｜銀天下","天下雜誌－華文世界最優質的財經雜誌"],"18":["天下財經週報：美伊戰爭還會拖多久？原油市場怎麼說？｜天下雜誌","安麗全台門市關到剩5間，業績竟創新高！專訪安麗台灣總裁林彥秀　如何靠訂閱制，助攻25%營收｜天下雜誌"],"16":["財經一週：美日央行聯手放鷹、美評估中國2027不攻台、輝達GTC掀龍蝦熱｜天下雜誌","無視「光銅並進」，Lumentum股價大漲，投資人該知道什麼？｜天下雜誌"],"14":["Token 是什麼？AI 如何拆解文字？計算原理、分詞方式與費用一次看｜天下雜誌","中國為何即將通過一項促進「民族團結」的新法律？｜天下雜誌"],"6":["高油價會持續多久？以色列鬆口了｜天下雜誌","川習會延遲會怎樣？｜黃仁勳：H200重啟生產供貨中國｜天下雜誌"],"15":["醫師：可能傷害健康的12個日常習慣｜天下雜誌","301條款重建台美關稅，15%還會往上加嗎？零關稅美國車還要等多久？｜天下雜誌"],"13":["為什麼筆記不能交給AI？教育哲學家艾倫斯：手寫才能幫助理解｜天下雜誌","心理素質教練：成功孩子的家長，用2招培養自信｜天下雜誌"],"10":["NemoClaw是什麼？看懂黃仁勳的「龍蝦」野望！｜天下雜誌","美伊不停火，日本央行恐延後升息？日圓、日股走勢一次看｜天下雜誌"],"4":["Fed偏鷹、油價又爆衝，美股大跌768點｜天下雜誌","沒有公務員，國家會變怎樣？｜天下雜誌"],"2":["主管帶頭生產AI垃圾？負責任員工淪垃圾處理員｜天下雜誌","專訪《陽光女子合唱團》導演與編劇：不靠特效與巨星，如何打敗《海角七號》？｜天下雜誌"],"12":["最新研究：喝咖啡有助預防洗腎，專家揭1種喝法最健康｜天下雜誌","第一線醫護悲歌：當搶救無效就吃官司，誰還願意冒險接管生命？｜天下雜誌"],"19":["退休後在家找螞蟻？50歲後學外語、培養新興趣，讓生活有重心、還能預防夫妻衝突｜銀天下","輝達GTC台廠》健策股價狂飆180%！塵封10年散熱技術翻紅，創辦人躍居全台第27富豪｜天下雜誌"],"5":["輝達GTC直擊》6000億祕密武器、「AI龍蝦」ChatGPT時刻，五大爆點一次看｜天下雜誌","聰明慢老專欄︱50後跑步怕傷膝蓋？掌握科學防傷5準則：跑一休一、肌肉當避震器｜銀天下"],"9":["曾認為太太是絆腳石，副校長中風3年後告白：追求名利地位是浪費生命，唯有妻小是真的｜銀天下","古老又永續的天花板級材質！一塊軟木塞背後的葡萄牙國樹哲學｜天下雜誌"],"8":["獨行荷姆茲：當全球油輪漂泊，中國為何能「掐準時機」成為能源贏家？｜天下雜誌","川普政府啟動301調查，台灣入列｜天下雜誌"],"0":["Team Taiwan帽T、中職棒球員衣褲都是「台灣狼」做的！彰化毛巾工廠組隊帶車縫機去WBC東京巨","履歷寫了年齡就沒下文？從美國、新加坡和丹麥經驗，消除職場年齡歧視｜銀天下"],"3":["人類學家救了Coach！「在包包上掛一本書」如何讓百億老牌重新被少女渴望？｜天下雜誌"],"1":["油價100美元的絕望，亞洲陷「油乾氣絕」危機！｜天下雜誌"]}},{"n":"商業周刊","d":"businessweekly.com.tw","g":"C","gl":"雜誌深度","ta":196,"dc":17,"mp":[[16.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,44.0,0.0,0.0,40.0,0.0,0.0,0.0],[6.2,18.8,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,59.4,0.0,0.0,0.0,3.1,12.5,0.0,0.0,0.0,0.0,0.0,0.0],[48.3,1.7,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,25.9,0.0,0.0,0.0,0.0,20.7,3.4,0.0,0.0,0.0,0.0,0.0],[58.3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,41.7,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],[46.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,5.1,12.8,12.8,0.0,0.0,0.0,0.0,0.0,0.0,23.1,0.0,0.0,0.0],[80.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,20.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,100.0,0.0,0.0,0.0,0.0]],"mr":[[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,11,0,0,10,0,0,0],[2,6,0,0,0,0,0,0,0,0,0,0,19,0,0,0,1,4,0,0,0,0,0,0],[28,1,0,0,0,0,0,0,0,0,0,0,15,0,0,0,0,12,2,0,0,0,0,0],[21,0,0,0,0,0,0,0,0,0,0,0,15,0,0,0,0,0,0,0,0,0,0,0],[18,0,0,0,0,0,0,0,0,0,0,2,5,5,0,0,0,0,0,0,9,0,0,0],[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0]],"dt":[25,32,58,36,39,5,1],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07"],"6":["03-15"]},"ht":{"20":["美超微高層涉走私25億美晶片入中：「吹風機換標」洗產地手法曝光－中央社｜商周","想比同齡人更年輕？3招「動靜交替」居家動作，延緩老化又防失能－商周頭條｜商周"],"13":["第二曲線為什麼長不出來？很多企業一開始就問錯問題－商周CEO學院課堂筆記｜商周","瓶底竟內縮！外媒揭賣場「包裝縮水」7大手法：以為划算其實買貴－聯合新聞網｜商周"],"0":["2026(115年)會考懶人包》時間日期、歷屆試題、成績查詢一次看－商周頭條｜商周","2026節氣「春分」到！吃什麼？習俗、禁忌、開運養生法一次看－商周頭條｜商周"],"12":["皮克敏手遊怎麼玩？新手入門完整攻略：種花、佛系揪團、飾品收集－活動旅遊全攻略｜商周","杏子豬排、段純貞⋯原來都是它的！拆解王座「每2年增一品牌」成長策略－中央社｜商周"],"18":["股王信驊飆1.2萬天價！38檔「千金股」誰是下波AI商機新主力？－中央社｜商周","輝達GTC直擊！「電源一哥」台達電靠一招，200條產線人均產能狂飆5倍－商周頭條｜商周"],"17":["芬蘭直擊！全球最快樂國AI時代繼續快樂的秘方：AI要強，先學看人眼睛說話－封面摘要｜商周","LINE訂閱制來了！月付165元解鎖「5大進階功能」－中央社｜商周"],"16":["輝達GTC》黃仁勳：每家公司都需要有OpenClaw策略，是指什麼？－商周頭條｜商周"],"19":["沒發生任何事，卻莫名低落？心理學家的解釋讓人鬆一口氣－商周頭條｜商周","披上母親家鄉球衣！「費仔」費爾柴德轟出滿貫砲：很榮幸代表台灣－聯合新聞網｜商周"],"11":["別讓二流營運，拖垮了一流策略－商周CEO學院課堂筆記｜商周","張安平的退路哲學：如果沒能力關掉它，就不要開始－郭奕伶專欄｜商周"],"1":["2026台灣燈會在嘉義》3/3開燈煙火秀！時間地點、主燈、交通攻略－活動旅遊全攻略｜商周","Nvidia股價一直跌，為什麼分析師說是「最健康的一場休息」？－FOMO研究院｜商周"]}},{"n":"鏡週刊","d":"mirrormedia.mg","g":"D","gl":"主題類媒體","ta":9921,"dc":20,"mp":[[0.7,0.8,0.2,0.2,0.2,2.0,4.2,3.1,2.5,6.0,8.7,3.0,6.1,8.9,5.6,7.2,8.5,8.3,6.1,5.6,3.7,4.2,3.2,1.2],[1.5,1.5,0.8,0.1,0.7,2.7,4.1,3.5,1.4,7.1,5.5,8.7,8.2,5.2,4.6,8.7,7.9,7.9,5.3,3.6,4.3,3.1,2.0,1.6],[1.4,1.6,0.7,0.1,0.2,1.3,4.4,4.6,4.3,6.2,7.0,6.9,7.2,6.9,4.9,5.7,7.2,7.2,6.9,4.1,4.0,2.8,2.7,1.7],[1.2,0.8,0.5,0.4,0.6,3.1,3.5,3.1,3.8,3.9,7.1,7.2,7.8,6.3,7.0,6.9,7.2,7.2,6.9,3.9,3.6,3.6,2.5,1.9],[0.6,1.1,0.2,0.3,0.6,1.2,2.6,4.9,4.0,5.5,6.8,6.5,7.4,5.3,7.1,7.4,7.2,7.2,6.8,4.0,3.6,3.6,3.9,2.3],[0.5,1.3,0.1,0.2,0.2,1.3,2.8,3.7,4.1,6.9,8.4,8.6,9.0,7.4,4.4,5.4,6.8,6.7,6.4,4.6,4.0,2.9,2.5,1.8],[0.2,1.2,0.1,0.5,0.2,1.3,2.0,2.1,3.5,6.2,8.3,8.6,7.9,7.0,6.9,8.3,6.9,5.7,5.7,3.3,3.8,4.1,4.1,2.2]],"mr":[[9,10,2,3,2,26,55,41,33,79,115,40,81,117,74,95,113,110,81,74,49,55,42,16],[22,22,12,2,10,40,60,52,21,104,81,128,121,77,68,128,117,116,78,53,63,46,30,24],[24,27,12,2,4,22,76,79,73,106,120,118,123,119,84,98,124,123,119,71,68,48,47,29],[21,14,8,6,10,53,59,53,64,66,120,122,132,107,118,116,122,122,116,66,61,61,43,32],[10,18,3,5,9,20,42,80,65,89,111,106,120,86,116,120,117,117,111,65,58,59,64,37],[6,16,1,2,3,16,35,45,50,85,103,106,111,91,54,66,84,83,79,56,49,36,31,22],[2,10,1,4,2,11,17,18,30,53,71,74,68,60,59,71,59,49,49,28,33,35,35,19]],"dt":[1322,1475,1716,1692,1628,1230,858],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"21":["國家重要民俗　紫竹寺羅漢門迎佛祖登場","潘辰武、周昱陳新生建功　松山與南湖爭冠"],"20":["白曜誠放話東超奪冠：證明領航猿東亞最強","美以聯手空襲納坦茲核設施　伊朗：未見輻射外洩"],"19":["要求特權不成嗆找大使館　陸女結局超尷尬 - 鏡週刊 Mirror Media","野生負鼠潛機場免稅店玩偶區　顧客嚇傻 - 鏡週刊 Mirror Media"],"18":["川普考慮收手？　伊朗放話報復全球3／護荷姆茲航道！英允美軍使用基地　打擊伊朗飛彈陣地","5人座擠8人撞爛！屏東休旅車墜橋「4輪朝天」 7人撇下重傷泰女集體消失 - 鏡週刊 Mirror M"],"17":["蔡其昌任期最後開季　預告聯盟將有新事物","7成國人近視！專家示警:高齡視覺退化加劇 - 鏡週刊 Mirror Media"],"16":["TWICE子瑜被拱「訓粉絲」　一句話尖叫聲衝破大巨蛋","認罹患乳癌　張淳淳急動刀切除乳房搶命"],"15":["被酸民批評外貌曾很受傷！「蜜大腿女神」河智媛吐心聲：這種評論最難受","LaLaport中文名曝光！網友看完笑翻：一秒來到印度 - 鏡週刊 Mirror Media"],"14":["九份「台灣好行」司機毒駕　「精神狀態不穩」載10客出車禍！乘客嚇傻 - 鏡週刊 Mirror Med","57歲趙正平砸300萬單飛！半年削肉10公斤瘦成這樣　鬆口與新婚妻拚第二胎 - 鏡週刊 Mirror"],"13":["李奧納多想和小24歲女友結婚？密友曝內幕 - 鏡週刊 Mirror Media","藍營蹭川高會：我們一直以締造和平為己任 - 鏡週刊 Mirror Media"],"12":["焦凡凡緊急剖腹產生了！婁峻碩當爸大淚崩","不認親中路害藍失血！鄭麗文：每縣市都贏"],"11":["言承旭「提詞機情緒指令」真相曝光！阿信鬆口要求眼眶泛紅、深呼吸內幕　被罵假感動超冤","第7屆JKF百大女郎激戰　她打敗6百人奪冠"],"10":["中度磁暴持續15小時！氣象署示警了　衛星導航、無線電都可能受影響","《狗仔回憶錄》針孔、船、空拍機　我們花五年抓到八里污水廠亂排污"],"9":["Tommy、Ryu共同發聲明「祝福對方」　網驚：是你們兩個要結婚喔？","女兒向母借手機驚見偷吃小王鐵證　嬌喘肉體啪啪「射很多」音檔全都露"],"8":["Lady M杜拜巧克力蛋糕不單賣了　網提配貨：當愛馬仕包在賣？","老夫妻靠微薄退休金拮据度日　一張泛黃紙張8500萬從天而降 - 鏡週刊 Mirror Media"],"7":["東北風偏強！7縣市陸上強風特報　吳德榮曝明高溫上看30度","眼神全是戲！楊祐寧陷情慾漩渦揭外遇動機　邵雨薇釣系美人「願者上鉤」"],"6":["少林寺淫亂方丈被抓　慘遭中共4大罪辦了 - 鏡週刊 Mirror Media","白宮清單見「台灣」！她點北京該警覺1事"],"5":["美股嚇壞了齊收黑！道瓊、那指崩逾443點","高市早苗見川普3大突破：美接受台灣有事"],"4":["薛澤3場熱身賽0失分　19年MLB生涯首次！","黃仁勳喊能源才是核心　它成最大受惠者！"],"3":["鴻海400元成幻影？杜金龍狠批1事透明度低","焦點／央行放寬第二戶房貸　地產10檔起飛"],"2":["熱／中東衝突鋼鐵俠回神　中鋼帶頭10強","個股／GTC後外資報告　台達電新目標價曝 - 鏡週刊 Mirror Media"],"1":["科技股漲完換誰　這2類準備接棒演出！","中東戰火嚇不退資金　這8檔人氣創新高！ - 鏡週刊 Mirror Media"],"0":["中東衝突延宕＋能源危機　股市走勢曝 - 鏡週刊 Mirror Media","他曾跟李小龍對打　一代動作巨星羅禮士去世"],"23":["債務糾紛相約談判！20歲軍人遭砍爆頭慘死 - 鏡週刊 Mirror Media","織織驚爆賴賴超渣3人行：度假騙當工具人"],"22":["1,360萬人次湧入嘉義　台灣燈會吸金316億","台南平房深夜竄惡火！烈焰狂燒現場畫面曝"]}},{"n":"風傳媒","d":"storm.mg","g":"D","gl":"主題類媒體","ta":3370,"dc":20,"mp":[[0.0,0.0,0.0,0.0,0.0,5.3,3.3,1.6,1.8,8.0,6.8,3.7,4.7,4.1,7.0,6.6,9.6,10.9,15.2,3.5,4.5,2.0,1.2,0.2],[0.6,0.0,0.0,0.0,0.0,3.1,2.7,1.5,2.1,4.8,8.6,11.1,8.4,4.0,4.2,10.3,5.7,12.6,8.0,2.3,4.0,2.9,1.5,1.5],[0.0,0.0,0.0,0.0,0.0,1.5,3.5,1.9,3.5,4.2,8.0,10.5,8.8,3.9,4.5,6.9,6.5,8.8,10.5,4.9,6.0,1.9,2.8,1.4],[0.6,0.0,0.1,0.0,0.1,2.3,2.9,1.6,1.6,2.2,6.7,9.1,6.7,4.6,7.1,10.4,10.3,10.6,6.8,5.5,5.4,2.3,1.3,1.6],[1.3,0.9,0.0,0.0,0.0,2.4,1.3,1.1,2.5,7.3,7.3,8.0,6.4,5.1,4.9,6.5,8.5,10.7,8.4,4.2,5.6,2.2,2.7,2.7],[1.4,0.7,0.0,0.0,0.0,2.8,4.9,2.4,10.1,4.5,7.3,7.3,6.3,6.3,1.4,4.5,2.8,5.2,7.0,8.7,10.1,3.5,2.8,0.0],[1.6,1.1,0.0,0.0,0.0,3.2,0.0,0.0,3.2,3.2,18.4,9.2,5.9,2.2,6.5,4.9,7.0,4.9,7.6,3.2,13.0,2.7,1.6,0.5]],"mr":[[0,0,0,0,0,26,16,8,9,39,33,18,23,20,34,32,47,53,74,17,22,10,6,1],[3,0,0,0,0,16,14,8,11,25,45,58,44,21,22,54,30,66,42,12,21,15,8,8],[0,0,0,0,0,10,23,12,23,27,52,68,57,25,29,45,42,57,68,32,39,12,18,9],[4,0,1,0,1,16,20,11,11,15,46,63,46,32,49,72,71,73,47,38,37,16,9,11],[7,5,0,0,0,13,7,6,14,40,40,44,35,28,27,36,47,59,46,23,31,12,15,15],[4,2,0,0,0,8,14,7,29,13,21,21,18,18,4,13,8,15,20,25,29,10,8,0],[3,2,0,0,0,6,0,0,6,6,34,17,11,4,12,9,13,9,14,6,24,5,3,1]],"dt":[488,523,648,689,550,287,185],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"21":["國民黨彰縣人選難產　藍白合也會被「千刀萬剮」？黃揚明：對手是民進黨新潮流 | 林子靖 | 新聞","政策對決！蘇巧慧拋新北「免費營養午餐」　李四川：評估可行就推動 | 戴祺修 | 新聞"],"20":["金價跌破4500關卡還要追加嗎？資深分析師估走勢：年底上看6000 | 蕭宥宸 | 新聞","三聲鑼震全臺！內門宋江陣炸裂登場　24陣頭拚216萬獎金、奪王者之璽 | 徐炳文 | 地方新聞"],"19":["CITY COP城市氣候峰會盛大登場 陳其邁：高雄積極與全球對話、同築淨零共好城市 | 徐炳文 | ","客語復振翻倍成長！高雄破千人受惠 老校傳承、新師突圍齊奪績優 | 徐炳文 | 地方新聞"],"18":["下周天氣預報/2波冷空氣接力！全台變天時間曝「降溫大雨狂下」，氣象署曝這天放晴 | 蔡惠芯 | 風生","國際永續藝術大展登場！新北市美術館《共織宇宙》3/21開展 | 李梅瑛 | 地方新聞"],"17":["快去加油！中油宣布下周「汽、柴油全面大調漲」，95無鉛最新油價破32元 | 蔡惠芯 | 風生活","BTS新專輯首日銷量近400萬張　合體回歸秀將點燃首爾 | 中央社 | 新聞"],"16":["要求賴清德直接宣布「一邊一國」　陳昭姿：不是立委在國會喊，而是告訴全世界 | 蕭宥宸 | 新聞","快點儲水！明天1縣市大停水「12小時沒水用、48萬戶受影響」，自家停水時間範圍一鍵查詢 | 蔡惠芯 "],"15":["不只拿珍珠港讓高市難堪　川普還要日本「多分擔」荷莫茲海峽維安 | 中央社 | 新聞","ATM領錢新規定上路！「忘記1動作」立刻警示大響，全台郵局、8家銀行名單曝 | 蔡惠芯 | 風生活"],"14":["二度同框力挺徐欣瑩　蔣萬安期待台北、竹縣科技治理緊密互動 | 戴祺修 | 新聞","國際知名品牌宣布「撤出全台百貨公司」！經營20年關閉所有門市，最後營業時間曝 | 蔡惠芯 | 風生活"],"13":["大特賣快搶！全聯、大全聯「高麗菜20元有找」，美廉社蔬菜買一送一、優惠時間品項一次看 | 蔡惠芯 |","新青安2.0利息補貼沒了？專家談改版示警「2026年壓力最大」　卓榮泰證實一事 | 李瑋萱 | 新聞"],"12":["不是鳳梨香蕉！台灣1水果外國人超愛，「每周狂賣800公斤」蟬聯熱銷冠軍、開市就搶光 | 蔡惠芯 | ","李俊俋等7人公務車案全沒事！她對比清潔隊員案氣到胃疼：不愧是天下第一檢 | 李瑋萱 | 新聞"],"11":["台灣1蔬菜雪崩式降價！供過於求、價格腰斬「每公斤剩7元」，趁現在買最便宜 | 蔡惠芯 | 風生活","川普提珍珠港，日記者慘被網暴！邱毅曝高市「狂看手錶」：犯了3大低級錯誤 | 李瑋萱 | 新聞"],"10":["3個台灣人大老闆要小心？美超微走私「AI圈崩一片」 謝金河：警訊不只梁見後 | 李瑋萱 | 新聞","台灣1蔬菜大降價！「盛產期價格創新低」攤販：現在正當時，趁便宜快買 | 李伊晴 | 風生活"],"9":["「史詩之怒」還是「無腦狂怒」？美國宣布「豁免制裁伊朗原油」，川普稱「考慮逐步結束軍事行動」 | 李忠","霞海、龍山寺輸了！台灣最靈驗月老廟冠軍是它「求姻緣、斬桃花速度超快」：三個月就見效 | Social"],"8":["【新新聞】孩子沉迷自拍求讚陷容貌焦慮　專家點出家長、政府應該行動了 | 黃天如 | VIP","不要的內衣千萬別丟掉！1縣市「可免費換錢、衛生紙」，兌換時間標準一次看 | 林俐 | 風生活"],"7":["風評：高成長數據下的隱憂 | 主筆室 | 評論","黃錦鐘觀點：伊朗戰爭攪亂「川習會」，美中誰更焦慮？ | 黃錦鐘 | 評論"],"6":["林庭瑤專欄：川普護航召集令，賴總統登艦親征？ | 林庭瑤 | 評論","林仁斌觀點：核電可以辯論，但風險帳本不能模糊 | 林仁斌 | 評論"],"5":["觀點投書：美國會議員拒簽空白支票，台灣呢？ | 劉宗夏 | 評論","觀點投書：大陸統一台灣的戰略升級 | 成吉鹿 | 評論"],"0":["別只去台北101！全台15大免費觀景台推薦，不出國看夢幻雲海，這1處竟然就在台灣中心 | 輕旅行 |","Netflix「1神片」爛番茄95%封神！原來愛沒消失也會分開，這種結局最讓人痛心 | 電影教我們的"],"23":["李四川能贏嗎？郭正亮曝選舉聲勢3階段：他連第2階段都尚未達成 | 周幸容 | 新聞","張勝德初選落敗將放棄宜蘭議長連任？陳鳳馨：不存在見縫插針的空間 | 周幸容 | 新聞"],"22":["監委私用公務車無罪簽結　吳宗憲嗆「雙標」：不能高層一套標準、基層一套標準 | 周幸容 | 新聞","問題不在提到珍珠港事件？美國前外交官：川普對日本要求的經濟讓步沒有上限 | 杜宗熹 | 新聞"],"4":["股市、黃金、美債重挫，台指期夜盤狂殺800點！鮑爾談話未能安撫「升息恐慌」？ | 林彥呈 | 財經"],"2":["聯準會再次按兵不動，今年還有望降息嗎？最新決策聲明、經濟預測與點陣圖一次看 | 林彥呈 | 財經"],"1":["2026縣市長選舉藍白合！兩黨共識各推3代表協調　黃國昌期待「全民調」 | 中央社 | 新聞","張又俠去哪了？習近平向共軍警告「絕不容許二心之人」，解放軍整肅升級！ | 國際中心 | 新聞"]}},{"n":"科技新報","d":"technews.tw","g":"D","gl":"主題類媒體","ta":1380,"dc":20,"mp":[[0.0,0.0,0.0,0.0,0.0,0.0,0.0,6.8,11.7,14.0,9.9,4.1,4.1,5.4,5.0,7.2,14.9,7.7,8.1,0.5,0.0,0.5,0.5,0.0],[0.0,0.0,0.0,0.0,0.0,1.6,0.4,4.4,4.4,13.2,8.4,8.4,6.8,3.6,8.4,8.0,13.2,7.2,8.4,0.4,1.2,0.0,1.6,0.4],[0.0,0.0,0.0,0.0,0.0,0.0,0.4,7.8,8.9,8.9,11.9,11.2,8.6,5.9,6.7,7.8,7.8,6.7,6.7,0.0,0.0,0.4,0.4,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.4,9.2,8.5,7.0,9.2,7.4,3.7,5.1,13.6,10.7,11.8,7.4,4.4,0.0,0.4,0.7,0.4,0.4],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,9.3,6.9,8.3,9.3,6.2,6.6,3.5,13.1,10.7,11.4,7.6,6.6,0.0,0.3,0.0,0.0,0.0],[8.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,12.2,14.3,18.4,12.2,0.0,12.2,10.2,2.0,4.1,4.1,2.0,0.0,0.0,0.0,0.0,0.0],[13.8,0.0,0.0,0.0,0.0,0.0,0.0,0.0,17.2,17.2,17.2,6.9,0.0,10.3,10.3,3.4,3.4,0.0,0.0,0.0,0.0,0.0,0.0,0.0]],"mr":[[0,0,0,0,0,0,0,15,26,31,22,9,9,12,11,16,33,17,18,1,0,1,1,0],[0,0,0,0,0,4,1,11,11,33,21,21,17,9,21,20,33,18,21,1,3,0,4,1],[0,0,0,0,0,0,1,21,24,24,32,30,23,16,18,21,21,18,18,0,0,1,1,0],[0,0,0,0,0,0,1,25,23,19,25,20,10,14,37,29,32,20,12,0,1,2,1,1],[0,0,0,0,0,0,0,27,20,24,27,18,19,10,38,31,33,22,19,0,1,0,0,0],[4,0,0,0,0,0,0,0,6,7,9,6,0,6,5,1,2,2,1,0,0,0,0,0],[4,0,0,0,0,0,0,0,5,5,5,2,0,3,3,1,1,0,0,0,0,0,0,0]],"dt":[222,250,269,272,289,49,29],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"18":["中國機器人跳來跳去「好看頭而已」！魏哲家：大腦 95% 台積電製造","Codex 突破 200 萬活躍用戶，OpenAI 收購 Python 工具開發商 Astral"],"16":["Windows 11 大調整！微軟放慢 AI 腳步，移除部分 Copilot 功能、工作列回歸自訂","華為成立傳媒軍團，布局行業智慧化轉型市場"],"14":["原意全失！外媒轟 Google 搜尋引擎用「AI 亂改新聞標題」","Supermicro 擴充產品陣容，加入 NVIDIA RTX PRO Blackwell Serv"],"13":["niconico 之父再出手！虛擬通話 App「POPOPO」上架首日空降 App Store 下載","中產家庭不是沒錢而是不消費，中國「影子儲蓄」將拖累全球經濟復甦"],"11":["電力需求達 10 GW！軟銀擬在美打造全球最大資料中心，供電成最大挑戰","美超微股價暴跌 33%、市值蒸發 1/3！共同創辦人廖益賢已辭董事職務"],"10":["雄心勃勃！馬斯克啟動超大型晶圓廠計畫，首批招募職位揭曉","全球首創太空 AI 突觸電晶體，韓國成功驗證關鍵技術"],"9":["「一起做家事」成約會新選項？Z 世代連交往都務實低調「Choremance」成新寵","工業廢水煉成先進製程用水，台積電南科造水重鎮獨步全球"],"8":["LLM 記憶體用量縮減 20 倍！NVIDIA 超狂新技術 KVTC，靠「KV 快取」翻轉記憶體瓶頸","糖尿病老藥再立功，二甲雙胍大降黃斑部病變三成風險"],"0":["破解 20 年謎團，天文學家首度直接觀測到超亮超新星背後的磁星「動力引擎」","充氣艙、太空娛樂場館到商業園區，國際太空站 2030 年退役後的五種想像"],"17":["促銷檔期帶動備貨，電視面板延續價格漲勢","連三年站台！高通執行長 Cristiano Amon 將發表 COMPUTEX 開幕主題演講"],"15":["你能忍得了多久？研究：美國人醒來 47 秒就解鎖手機","OpenAI 建構「超級 App」，整合 ChatGPT、Codex 及瀏覽器力抗 Anthropi"],"12":["軟體開發專用，Cursor 推出純編碼模型 Composer 2","傳特斯拉擬向中國廠採購 29 億美元太陽能製造設備"],"7":["中東戰火擴大油價狂飆，川普緊急出手穩定市場","Linux 崛起的最大功臣：微軟"],"6":["伊朗三襲油港推升原油衝 103 美元！川普喊「航運很快解封」油價會崩跌","瞄準養龍蝦熱潮！GTC 大會發布 NemoClaw 與 Agent Toolkit 升級 AI 代理"],"20":["OPPO Find N6 亮相，摺痕更淺、6,000mAh 電池塞進輕薄機身","鄭麗君夫婿持股旺宏超越董座，近來股價翻漲預估獲利可觀"],"19":["告別長達 23 年任期！創意董事長曾繁城將於股東會後退休","光寶秀 AI-RAN 架構，MWC 展示 NVIDIA 加速平台成果"],"5":["輝達發表最強 AI 晶片 Vera Rubin，單 Token 成本狂降 90%，為代理型 AI 時","黃仁勳重申摩爾定律已到盡頭，輝達以加速運算開啟百工百業 AI 運算時代"],"22":["意外地點發現中子星車禍現場，或能解開兩個天文謎團","愛普*2月營收月增9.6%"],"21":["五年了，蘋果終於推出真正的 AirPods Max 2","美光邀請函曝光 26 日舉行銅鑼廠機台進駐典禮，與力積電交易進入新階段"],"23":["旺宏迎接 eMMC 史詩級缺貨潮，法人凱基投顧上調目標價至天價 300 元","蘋果推新 Studio Display 與全新 Studio Display XDR"]}},{"n":"上報","d":"upmedia.mg","g":"D","gl":"主題類媒體","ta":1367,"dc":20,"mp":[[0.0,0.0,0.0,0.0,0.0,0.0,10.8,4.1,1.8,5.0,8.1,4.1,4.5,6.8,5.9,5.9,8.1,7.2,5.0,8.1,4.5,4.1,5.9,0.5],[0.0,0.0,0.0,0.0,0.0,0.0,9.4,1.9,3.3,5.6,6.6,7.5,8.0,5.2,5.2,8.0,7.0,8.0,7.0,5.2,5.6,3.8,2.3,0.5],[0.4,0.0,0.0,0.0,0.0,0.0,9.2,6.3,2.5,3.4,6.7,6.7,7.1,5.9,3.8,5.5,6.3,6.3,8.4,6.7,3.4,5.5,3.8,2.1],[0.0,0.0,0.0,0.0,0.0,0.0,10.3,3.3,4.1,2.5,6.6,6.2,7.4,4.9,5.3,8.2,6.2,6.2,7.0,7.4,2.9,4.5,5.3,1.6],[0.0,0.0,0.0,0.0,0.0,0.0,7.2,6.2,1.4,4.3,6.2,7.2,7.2,6.7,7.2,6.2,7.2,6.7,9.1,4.8,3.8,1.9,4.8,1.9],[0.0,0.7,0.0,0.0,0.0,0.0,6.6,6.6,7.3,3.6,2.2,13.1,8.8,8.8,3.6,3.6,3.6,10.2,8.0,7.3,2.2,1.5,0.7,1.5],[1.0,0.0,0.0,0.0,0.0,0.0,8.6,0.0,2.9,11.4,1.9,11.4,8.6,7.6,6.7,11.4,10.5,4.8,6.7,4.8,1.9,0.0,0.0,0.0]],"mr":[[0,0,0,0,0,0,24,9,4,11,18,9,10,15,13,13,18,16,11,18,10,9,13,1],[0,0,0,0,0,0,20,4,7,12,14,16,17,11,11,17,15,17,15,11,12,8,5,1],[1,0,0,0,0,0,22,15,6,8,16,16,17,14,9,13,15,15,20,16,8,13,9,5],[0,0,0,0,0,0,25,8,10,6,16,15,18,12,13,20,15,15,17,18,7,11,13,4],[0,0,0,0,0,0,15,13,3,9,13,15,15,14,15,13,15,14,19,10,8,4,10,4],[0,1,0,0,0,0,9,9,10,5,3,18,12,12,5,5,5,14,11,10,3,2,1,2],[1,0,0,0,0,0,9,0,3,12,2,12,9,8,7,12,11,5,7,5,2,0,0,0]],"dt":[222,213,238,243,209,137,105],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"21":["賴清德拋重啟核電　府方人士：核安原則下因應現況的務實考量 -- 上報","國泰金控健康走聚音樂、戶外體驗與毛孩　打造全齡共樂健走派對 -- 上報"],"19":["韓國啦啦隊「樂天五本柱」亮相　河智媛笑談與李政厚撞臉 -- 上報","賴清德泡核電重啟　王鴻薇指美國壓力、羅智強提三大問題 -- 上報"],"18":["快加油！中油宣布下週一汽油漲1.8元　柴油漲1.4元 -- 上報","魏哲家嗆中國機器人「好看沒用」　致詞金句連發「95%大腦都台積電做的」 -- 上報"],"17":["新竹棒球場解約爭議廠商求償逾1500萬　議員轟高虹安政治操作釀破局 -- 上報","德黑蘭證實向印度洋英美基地發射彈道飛彈　普丁稱「和伊朗站在一起」 -- 上報"],"16":["《寒戰》回歸推出前傳集結10大影帝飆戲　劉俊謙、梁家輝「兩代李文彬」首度同框掀沸騰 -- 上報","賴清德計畫重啟核二核三月底送審　民眾黨：早知如此何必當初 -- 上報"],"15":["鬆口重啟核二核三　賴清德拋出4理由 -- 上報","德黑蘭發行千萬面額新鈔　FT：凸顯伊朗經濟困境加劇 -- 上報"],"13":["中東戰火衝擊台灣能源　蔣萬安喊話中央借鏡當年十大建設 -- 上報","龜梨和也《北方謙三 水滸傳》演武將「林沖」爆紅　新劇《金牌救援》演棒球隊團長帶領全員逆轉勝 -- 上"],"12":["米蘭冬奧隊醫失蹤險害選手禁賽　李洋：已開鍘、未來不錄用 -- 上報","《逐玉》田曦薇為救閨蜜孔雪兒不告而別　張凌赫火速追妻求愛「這1幕」全網嗑翻 -- 上報"],"11":["國民黨議員李傅中武涉貪千萬　一家7口都被告、夫妻800萬交保 -- 上報","考慮「逐步減少」對伊朗用兵　川普揚言讓「有需要的國家」維護荷莫茲海峽安全 -- 上報"],"10":["【攤位圖】美食市集「辣翻塔可節」花博登場！道地墨西哥料理一次吃　還有 DJ、樂團表演 -- 上報","《逐玉》張凌赫隱瞞「武安侯」身分遭田曦薇狠賞巴掌　兩人大吵戲份因「這插曲」NG全網爆笑 -- 上報"],"9":["用「融合發展」寫就的劇本── 一個服貿過關的台灣（系列之四） -- 上報","陳其邁訪美行結束　高市府宣告三大突破 -- 上報"],"6":["李濠仲專欄：蔡英文類型的「卸任總統」 -- 上報","錯誤解讀的假訊息 -- 上報"],"23":["賴清德開箱海鯤號遭抓包3問題　台船：不影響測試可立即改進 -- 上報","【國票金爭奪戰】規模雖小但群雄崢嶸　財政部軍師先裂解旺旺派 -- 上報"],"22":["烏克蘭完成波灣5國反無人機部署　西班牙擬向民眾提供2145億元補助 -- 上報","【換屋族微解封】銀行房貸估值早已砍　民眾實拿資金沒增 -- 上報"],"20":["899 元吃到飽！鳥貴族「這分店」無限供應串燒、生啤酒　4 分店平日免費續杯、新分店插旗桃園 -- ","台中悍女庭外打律師巴掌、恐嚇殺人　中院不忍了裁押 -- 上報"],"14":["《飛龍在天》男星怒控「塑身天后」張淳淳詐騙上千萬　落淚訴始末 -- 上報","陳昭姿嗆賴政府有本事宣示「台灣中國一邊一國」　綠委回吼議場吵翻 -- 上報"],"8":["【節目時間表】2026 大港開唱陣容、交通攻略！巧虎、謝金燕、芒果醬等卡司登場　近 300 攤美食文","美情報總監：中國無2027年攻台計畫　高市早苗涉台言論是「重大轉變」 -- 上報"],"7":["【大師講堂】川普正在向習近平示範如何不費一顆子彈拿下台灣 -- 上報","錢勒尼（Brahma Chellaney） UpMedia"],"0":["【WBC】大谷翔平連兩場開轟、鈴木誠也2轟　日本8：6擊敗韓國 -- 上報","中東戰事衝擊能源　龔明鑫：若拖到4月全面燃煤發電是最後手段 -- 上報"],"1":["【WBC】曾豪駒疑被拍到眼眶泛紅　網心疼喊「盡力局就好」 -- 上報"]}},{"n":"DIGITIMES","d":"digitimes.com.tw","g":"D","gl":"主題類媒體","ta":724,"dc":19,"mp":[[0.0,0.0,0.9,0.9,0.0,0.0,0.0,20.0,3.5,3.5,2.6,4.3,20.9,0.0,11.3,21.7,7.8,2.6,0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,12.8,1.1,4.3,17.0,20.2,10.6,1.1,9.6,14.9,4.3,3.2,1.1,0.0,0.0,0.0,0.0,0.0],[0.7,0.0,0.0,0.0,0.0,0.0,0.0,21.3,6.7,8.0,10.0,10.0,14.7,1.3,4.0,11.3,10.7,1.3,0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,22.1,1.8,8.6,11.7,12.3,11.0,6.7,4.9,5.5,9.2,6.1,0.0,0.0,0.0,0.0,0.0,0.0],[1.2,0.0,0.0,0.0,0.0,0.0,0.0,1.9,21.1,8.7,10.6,14.9,11.2,0.6,6.2,15.5,6.2,1.2,0.6,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,46.7,3.3,0.0,0.0,6.7,30.0,3.3,3.3,0.0,0.0,0.0,6.7,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]],"mr":[[0,0,1,1,0,0,0,23,4,4,3,5,24,0,13,25,9,3,0,0,0,0,0,0],[0,0,0,0,0,0,0,12,1,4,16,19,10,1,9,14,4,3,1,0,0,0,0,0],[1,0,0,0,0,0,0,32,10,12,15,15,22,2,6,17,16,2,0,0,0,0,0,0],[0,0,0,0,0,0,0,36,3,14,19,20,18,11,8,9,15,10,0,0,0,0,0,0],[2,0,0,0,0,0,0,3,34,14,17,24,18,1,10,25,10,2,1,0,0,0,0,0],[0,0,0,0,0,0,0,0,14,1,0,0,2,9,1,1,0,0,0,2,0,0,0,0],[0,0,0,0,0,0,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],"dt":[115,94,150,163,161,30,11],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08"]},"ht":{"16":["EU policies tighten costs and complexity for autom","Lumotive makes optical breakthrough, targets 10,00"],"15":["US auto market hits a wall as subsidies dry up and","Next-gen flagship smartphones shift to optical inn"],"12":["GSEO reports yearly increase in February demand, n","Samsung Display's 4Q25 profit soars on BOE's KRW50"],"11":["Jabil to wind down Clinton facility, shift product","Hormuz tensions test Taiwan's energy security as g"],"14":["SK Group chairman reportedly to meet Nvidia CEO at","Nvidia and AWS strike massive GPU supply deal thro"],"10":["London stakes its claim as the financial Launchpad","Britain's space cluster presents model Taiwan coul"],"9":["Alibaba&rsquo;s Qwen loses its architect, stirring","Tesla to reportedly double AI6 chip orders, boosti"],"19":["AI robot fingertip sensing set to drive next tech ","Taiwan legislature blocks science budget; Minister"],"13":["AI EXPO Taiwan 2026 to open March 25, trio of AI t","Xiaomi MiMo-V2-Pro tops AI model rankings in blind"],"18":["Global top-3 memory maker status, 1Q26","Mech-Mind Robotics champions eyes and brains for e"],"8":["Meta's pullback on Metaverse shows the limits of t","UK-Taiwan R&D ties scale up with Foxconn, Turing S"],"0":["Intel pushes large-area AI packaging to close foun","Lumotive creates world's first 2D photonic beamfor"],"17":["New Chinese AI service startup analysis","MSI to increase gaming product prices by up to 30%"],"7":["Analysis: China's on-device AI chipmakers rush to ","China's mature-node push gathers pace: Nexchip, Si"],"3":["Component price surge hits business PC market hard"],"2":["Meribank extends semiconductor precision to biomed"],"6":["Global auto giants retreat to 'survival defense' a","Adata chairman expects NAND price surge in 2H26"]}},{"n":"新頭殼","d":"newtalk.tw","g":"D","gl":"主題類媒體","ta":112,"dc":2,"mp":[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,25.0,25.0,50.0],[0.9,0.0,0.9,0.0,2.8,0.0,1.9,3.7,0.9,8.3,2.8,8.3,7.4,9.3,8.3,11.1,8.3,7.4,6.5,5.6,3.7,1.9,0.0,0.0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],"mr":[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,2],[1,0,1,0,3,0,2,4,1,9,3,9,8,10,9,12,9,8,7,6,4,2,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],"dt":[0,0,0,0,4,108,0],"dd":{"0":[],"1":[],"2":[],"3":[],"4":["03-20"],"5":["03-21"],"6":[]},"ht":{"21":["回應核三重啟議題　周春米：安全、安全、再安全","江少慶從憂鬱到笑容滿面　有信心4月回到投手丘"],"20":["核電重啟有條件　政院：核三3月底送再運轉計畫","蔡其昌盼中職場均1.1萬人　二軍試用電子好球帶"],"19":["花蓮地院可疑包裹驚動防爆小組　僅為報紙惹虛驚","國中硬式棒球聯賽艾太郎再見安　長安首闖冠軍戰"],"18":["僅靠大拇指！巴基斯坦男子1分鐘66下伏地挺身刷新世界紀錄","油價又漲！下週汽油漲0.2元,柴油漲0.4元 中油吸收比例達到7成5"],"17":["行動郵局App功能升級！行動裝置即可完成多元金融操作","謝國城盃少棒22日開打　拚前進威廉波特資格"],"16":["已故作家王浩一之女漸凍症過世 驚傳與接種AZ有關  石崇良：尚無文獻證實有關","驚悚瞬間！台鐵副站長違規闖越　煞不住慘遭列車撞擊畫面曝光"],"15":["記得儲水！高雄11行政區3/22停水12小時 影響區域一次看","重逢李四川笑開懷 蔣萬安：多吃「川貝」枇杷膏"],"14":["蔡英文東吳開講吐真心話！狂推「這政策」減壓 年輕人：不再被學費綁住人生","發揚台中大雅麥鄉文化 小麥麵食文化節持續18年"],"13":["桃園機場新管制政策上路不到一週  班機誤延30分鐘惹議","假賣虐兒影像真詐財！暗網「暴力愛麗絲CP」遭殲滅 主嫌竟藏中國"],"12":["涉違規輸出中國！美超微共同創辦人遭起訴　董事請辭、股價崩跌33%","2026台灣燈會創316億觀光產值！觀光署：中央地方打造國家級品牌"],"11":["中部缺水警訊！鯉魚潭水庫蓄水量剩3成 德基水庫較去年同期少3成","賴稱「國民黨統治比日本差」 李文忠：無助和解"],"10":["喊已勤跑選舉500天挨酸 蘇巧慧：少一點口水","中共10機艦台海周邊活動 國軍嚴密監控應處"],"9":["返鄉創業賣鐵板牛排  越南移工：沒有台灣沒今天的我","美官員：持續挺台國際參與　反對北京扭曲2758決議"],"8":["能源供應受阻恐致經濟衰退！美股道瓊跌443點 台積電ADR跌2.82%"],"7":["川普政府告哈佛大學 控校方縱容反猶示威釀敵意校園","兩棲攻擊艦拳師號領軍出動 美增派數千部隊趕赴中東"],"6":["花蓮近海連2地震！ 氣象署：未來3天可能還會有規模4.5左右的餘震","楊烈重回台中「福地」開唱！難忘與「許不了」同台歌廳秀　感謝台中人「阿莎力」相挺"],"4":["屏東警用無人機隊成軍   維安、交控與夜間搜索全面升級","高雄春藝節6/6致敬傳奇    跨世代歌后重現鄧麗君不朽經典歌曲"],"2":["(影)綠委嗆「分貝比黃國昌還大」的陳昭姿  曾為一邊一國理事長 現在還支持嗎？"],"0":["陳昭姿嗆「有本事宣布一邊一國」他反嗆：回去問柯文哲、黃國昌敢不敢公開宣示？"],"23":["王齊麟喜獲「麟兒」感謝老婆　抱小Baby讚太奇妙","德保拉復出首戰2觸身生涯首見　王柏融傷退無大礙"],"22":["奧爾良羽球賽　林芷均/楊筑芸爆冷勝世界第18晉4強"]}},{"n":"中華新聞雲","d":"cdns.com.tw","g":"E","gl":"地方媒體","ta":4170,"dc":20,"mp":[[4.6,0.0,0.0,0.0,0.0,0.0,6.0,0.3,5.4,0.0,0.8,0.2,0.9,0.3,1.4,3.9,11.5,9.5,9.6,5.7,14.4,23.5,1.9,0.0],[10.0,0.0,0.0,0.0,0.0,0.0,4.8,0.3,2.0,0.2,1.5,0.7,1.3,1.2,0.7,5.6,11.1,12.0,6.5,3.7,12.6,21.9,4.0,0.0],[7.9,0.0,0.0,0.0,0.0,0.0,5.2,0.4,6.0,0.0,0.8,1.0,0.6,0.1,1.8,4.5,15.0,9.9,6.1,7.4,16.0,14.0,3.2,0.0],[8.1,0.1,0.0,0.0,0.0,0.0,4.6,0.4,5.1,0.0,0.3,1.7,1.6,0.4,2.7,5.9,6.6,7.1,2.0,7.9,15.9,24.2,5.4,0.0],[7.3,0.0,0.0,0.0,0.0,0.0,4.1,0.4,5.1,0.0,1.2,1.2,0.7,1.2,1.9,6.2,11.7,9.0,7.2,11.3,10.0,16.2,5.1,0.1],[4.3,0.0,0.0,0.0,0.0,1.7,8.1,0.6,0.0,0.0,0.4,0.4,1.5,1.5,1.1,3.2,5.3,5.8,5.3,15.4,18.2,20.9,6.2,0.0],[7.0,0.0,0.0,0.0,0.0,0.0,7.4,0.4,0.0,0.0,0.4,1.1,1.8,0.4,1.5,4.4,0.4,2.6,13.7,3.7,18.8,33.6,3.0,0.0]],"mr":[[29,0,0,0,0,0,38,2,34,0,5,1,6,2,9,25,73,60,61,36,91,149,12,0],[60,0,0,0,0,0,29,2,12,1,9,4,8,7,4,34,67,72,39,22,76,132,24,0],[61,0,0,0,0,0,40,3,46,0,6,8,5,1,14,35,116,76,47,57,123,108,25,0],[60,1,0,0,0,0,34,3,38,0,2,13,12,3,20,44,49,53,15,59,118,180,40,0],[50,0,0,0,0,0,28,3,35,0,8,8,5,8,13,42,80,61,49,77,68,110,35,1],[20,0,0,0,0,8,38,3,0,0,2,2,7,7,5,15,25,27,25,72,85,98,29,0],[19,0,0,0,0,0,20,1,0,0,1,3,5,1,4,12,1,7,37,10,51,91,8,0]],"dt":[633,602,771,744,681,468,271],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"21":["下週汽柴油 調漲1.8及1.4元","美元穩居全球資金避風港"],"20":["高市阿靈頓公墓致意 訪美劃句點","傳俄提停助伊朗換美不援烏遭拒"],"19":["新營車禍 駕駛失蹤查出毒駕","生母失責 判2兄弟准繼母收養"],"18":["長青學苑首辦爵士鼓班 鄭朝方號召「搖滾爺奶」組不老樂團","松柏獅子會健行反毒  吸引千人齊步走"],"17":["台東區域植樹及森活市集登場 學生團體共同參與","第41屆生達盃兒童寫生比賽 走馬瀨農場登場"],"16":["2026臺南鐵人三項全國賽　菁英組潘家兄妹衛冕成功","安心農糧當季好食　農糧署攜廿家業者希望廣場展售國產雜糧"],"15":["男破門闖立委服務處　落網扯「王爺派我來」","新北兒童月動玩童趣會開跑　親子館闖關集點抽好禮"],"14":["生母失責卻擋繼母收養　兩兄弟當庭護繼母：「我們要當媽依靠」","南市勞工局連結做工行善團志工到北區、關廟區為弱勢修屋"],"13":["小麥麵食文化節熱鬧登場  小小麥鄉人探索大雅麥田美景","「加樹淨零 馬力全開」植樹活動　攜手落實淨零永續願景"],"12":["南橫關山6旬翁登山猝死  今晨直升機順利完成遺體吊掛作業  ","東港櫻花蝦拍賣場通過HACCP系統驗證 打造拍賣市場新標竿"],"11":["高雄大港開唱前夜祭 「有塩人大舞台」樂迷朝聖","高雄港與波蘭「格丁尼亞港」簽署合作備忘錄"],"10":["台灣燈會吸引1360萬人次  帶動316億元觀光產值","桃園16歲鼓手邱繹睿 勇奪亞洲國際爵士鼓大賽總冠軍"],"7":["115年3月21日中華日報","115年3月20日中華日報"],"6":["冷電漿治療 糖友截肢邊緣新曙光","熟男戒菸酒檳榔 躲不過咽喉癌"],"5":["〈車壇大小事〉VOLVO啟動史上最大OTA軟體升級","〈車壇大小事〉BMW 110週年  承襲經典  跨越世紀"],"0":["交通指揮","誠徵臨時工"],"23":["安南平房晚間傳火警　義消英勇救出受困女"],"8":["跨機關合作展成效 海關海巡聯手查獲貨櫃走私香菸","去年中國大陸海洋船舶工業增長逾25%"],"22":["宜蘭縣長選戰民調大贏藍白 林國漳：民調是階段性的參考數據","新竹榮家攜手台積電慈善基金會舉辦生命繪本成果展"],"1":["全球科技產業發展趨勢論壇桃園登場　解析未來科技關鍵　"],"9":["台灣小號演奏家落腳廣州 十年築起音樂與餐飲人生"]}},{"n":"匯流新聞網","d":"cnews.com.tw","g":"E","gl":"地方媒體","ta":988,"dc":20,"mp":[[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3.4,10.1,4.0,10.7,6.0,12.1,8.7,14.1,12.1,7.4,4.0,4.7,2.0,0.7,0.0],[0.0,0.0,0.0,0.6,0.0,0.0,0.0,0.0,0.0,3.6,6.0,12.6,7.8,3.6,10.2,14.4,9.6,12.0,6.6,3.0,4.8,2.4,2.4,0.6],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.5,12.7,13.7,5.6,3.6,8.6,11.2,12.7,8.1,11.7,3.6,3.6,1.0,2.5,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.7,12.2,11.6,6.6,11.0,8.3,10.5,6.1,11.0,6.1,2.8,4.4,3.3,3.9,0.6],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3.0,6.1,10.1,10.6,4.5,15.2,6.1,10.6,8.6,11.1,4.0,2.0,4.5,3.5,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3.5,19.3,7.0,5.3,8.8,5.3,10.5,15.8,12.3,12.3,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,5.1,15.4,15.4,10.3,5.1,7.7,7.7,17.9,0.0,7.7,7.7,0.0,0.0,0.0,0.0]],"mr":[[0,0,0,0,0,0,0,0,0,5,15,6,16,9,18,13,21,18,11,6,7,3,1,0],[0,0,0,1,0,0,0,0,0,6,10,21,13,6,17,24,16,20,11,5,8,4,4,1],[0,0,0,0,0,0,0,0,0,3,25,27,11,7,17,22,25,16,23,7,7,2,5,0],[0,0,0,0,0,0,0,0,0,3,22,21,12,20,15,19,11,20,11,5,8,6,7,1],[0,0,0,0,0,0,0,0,0,6,12,20,21,9,30,12,21,17,22,8,4,9,7,0],[0,0,0,0,0,0,0,0,0,2,11,4,3,5,3,6,9,7,7,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,2,6,6,4,2,3,3,7,0,3,3,0,0,0,0]],"dt":[149,167,197,181,198,57,39],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"18":["法庭攻擊暴力女遭羈押　中律理事長發文讚全國律師團結","虛驚一場　花蓮地院報紙包裹被認爆裂物　花檢分案調查"],"17":["高虹安赴東京巨蛋考察球場專業　李國璋：確保這次新竹人能安心使用","【CNEWS】賴清德證實重啟核電！ 柯文哲諷「轉彎」：去年公投怎麼罵我們？"],"16":["蔣萬安再度同框力挺徐欣瑩　讚她能將新竹縣帶向專業科技治理","疑偷累了　破壞門鎖侵入診所坐在沙發休息被逮涉竊"],"15":["張嘉郡拋醫療政見　大數據預警長輩生理數值、全面深化在宅醫療","蘇俊賓3度參與媽祖水上遶境　桃園大溪有全台最美麗路線"],"14":["凌濤重申9000億軍購版本　國民黨要表達強力支持台灣國防的決心","投資基金3000萬元　友人報警查證資料庫竟是詐騙平台"],"13":["陳見賢提3大動保升級方向　打造科技與溫度並存城市","國人誤認垃圾一燒了事　田秋堇警告：源頭減量不彰讓掩埋場空間告急"],"11":["AI導航百校資源、一站式探索升學與職涯　2026新北教育博覽會登場","新店陽光橋全面清洗　新北高灘處實施分時段封閉通行"],"10":["台灣遭標註中國一省致缺席WTO　陳冠廷轟喀麥隆剝奪與會權利","【何啟聖專欄】藍白合終能成局？  考驗柯文哲的司法的抗壓性！"],"9":["【有影】Moorgen摩根智能家居插旗紐約家具設計中心　展現進駐陶朱隱園大師美學","台北徵信社推薦！2026 年委託指南｜服務項目、收費行情與口碑業者完整整理"],"22":["雀客國際營運策略　品牌版圖人才3箭齊發挑戰年營收30億元","神壇涉藏槍毒　警查獲槍彈毒品咖啡包分裝場"],"21":["涉竊得手竟環島流竄　台北警百里追緝逮人","潛入住家行竊財物逾340萬元　45歲男跨區逃竄難逃法網"],"20":["涉闖店家觸動警鈴逃離　土地公壽誕廟前現蹤","日台2才女攜手4月合作推新單曲　韋禮安全新EP MV上架"],"19":["舞台劇明星養老院4月台中封箱　趙少康大讚這齣戲很有趣","淡江大橋帶動淡水度假熱潮　福容飯店露營主題房深耕親子市場"],"12":["陳其邁訪美3大突破　落實台美日3方供應鏈合作","外籍幫傭申請條件放寬　陳培瑜：罕病等特殊需求有優先機制"],"23":["中華電信新春期許　智慧韌性贏信賴AI乘光展未來","大地酒店11周年慶　住宿餐飲溫泉SPA指定項目第2件半價"],"3":["紫青商會春酒聯歡　總會長郭金耀盼推動跨縣市跨產業合作"]}},{"n":"放言","d":"fountmedia.io","g":"E","gl":"地方媒體","ta":326,"dc":19,"mp":[[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,4.0,8.0,4.0,0.0,38.0,12.0,8.0,20.0,4.0,0.0,2.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.6,1.6,14.8,19.7,4.9,0.0,4.9,21.3,16.4,9.8,1.6,0.0,1.6,1.6,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,4.4,14.7,8.8,7.4,4.4,10.3,10.3,11.8,23.5,2.9,0.0,1.5,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.6,14.1,14.1,10.9,6.2,9.4,4.7,18.8,18.8,1.6,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,1.7,0.0,0.0,0.0,5.0,13.3,11.7,5.0,8.3,11.7,8.3,11.7,13.3,8.3,1.7,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,7.1,7.1,7.1,35.7,7.1,0.0,0.0,14.3,0.0,14.3,7.1,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,11.1,11.1,22.2,33.3,11.1,11.1,0.0,0.0,0.0,0.0,0.0,0.0,0.0]],"mr":[[0,0,0,0,0,0,0,0,0,0,0,2,4,2,0,19,6,4,10,2,0,1,0,0],[0,0,0,0,0,0,0,0,0,1,1,9,12,3,0,3,13,10,6,1,0,1,1,0],[0,0,0,0,0,0,0,0,0,0,3,10,6,5,3,7,7,8,16,2,0,1,0,0],[0,0,0,0,0,0,0,0,0,0,1,9,9,7,4,6,3,12,12,1,0,0,0,0],[0,0,0,0,0,0,1,0,0,0,3,8,7,3,5,7,5,7,8,5,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,1,1,1,5,1,0,0,2,0,2,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,1,1,2,3,1,1,0,0,0,0,0,0,0]],"dt":[50,61,68,64,60,14,9],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08"]},"ht":{"20":["遭控涉貪還有私生子！少林寺前住持釋永信被正式起訴！","已故作家王浩一愛女王澧綾漸凍症病逝得年37歲、王浩威揭生前接種兩劑AZ疫苗"],"19":["「沒來的狼還是狼！」汪浩評北京無2027攻台計劃「並不代表威脅消失、只是中共戰略節奏的調整」！","洪健益上節目替李四川緩頰還給建議？！周玉蔻發文嗆「拿了多少好處」！主持人臉書貼全文逐字稿一次看！留言"],"18":["《沒有花開的春天》連載系列四：當新聞自由慢慢消失會是什麼樣子？中資媒體審查言論、經濟一落千丈「台灣是","文化外交！林昶佐牽線「史上最大芬蘭國會議員代表團」訪台、週末赴高雄大港開唱「追星」芬蘭之光歌手"],"17":["陳昭姿嗆賴清德宣布「一邊一國」？邵立中請她問黃國昌、柯文哲敢不敢喊：我請百份雞排＋珍奶！周玉蔻酸「只","網友留言幫卓榮泰緩頰…周玉蔻笑稱「留言3分2昏睡中…」：發言人室護主動員積極「給李慧芝一顆星星！」"],"16":["陳其邁赴美參加GTC大會返台：深刻理解「電力就是算力，算力就是國力」","洪健益對李四川選情表達「遺憾」還獻策…周玉蔻質疑：到底拿了多少好處"],"15":["立院原訂總質詢、白營提兩譴責案「議事空轉一上午！」吳思瑤轟「正事不幹盡搞鳥事」：有時間不審總預算？","川普開「珍珠港」地獄梗、高市早苗面露尷尬…提問日媒記者遭起底！網怒：問蠢問題"],"14":["不爽被黃捷嗆國籍問題...李貞秀院會當場「比倒讚」！綠委齊轟囂張：不開心就回中國「國台辦幫遮風擋雨」","鄭麗文是迷幻藥、國民黨已浮「第二集團」劍指綠營！顏蔚慈：民進黨沒有歡欣鼓舞本錢、要努力監督"],"13":["放著台中失火又停電…盧秀燕去美國不受待見？蔡依橙揭：都沒有聯邦層級機構的消息","綠營被針對？南投縣府不做垃圾減量、強蓋名間焚化爐...民進黨籍鄉長陳翰立悲喊：中央把自己的權力拋出去"],"11":["民進黨翻盤「5+1」縣市恐被中央帶衰？顏蔚慈坦言政策「有宣傳不到位」：跨越同溫層才能跨越勝選最後一哩","指文總英文名改「Taiwan」有必要！梁文傑：不能花納稅人錢為中國宣傳"],"10":["李四川起手打負面選戰還倒打自己人！顏蔚慈酸對新北、蘇巧慧都不熟太荒謬：完全沒打到痛處「人格更打大問號","李四川自打嘴巴？嗆蘇巧慧起跑新北500天「沾沾自喜」、卻回：我20年前就走遍新北"],"12":["有夠Lag！李四川現在才想到淡江大橋 蘇巧慧「早已追蹤」：風切聲問題4月底前改善","馬英九基金會風波延燒…周玉蔻點名「重量級親信」就是金溥聰！"],"21":["中文名還是「中華」！文總今完成更名程序、僅改英文名為「Taiwan」","愛情公寓、大研生醫創始人張家銘辭世 公司表示營運一切正常"],"6":["【騰焰飛芒】藍白執意擋軍購，台灣面臨迫切的危機"],"22":["認定李貞秀無參選立委資格、公部門將提「當選無效之訴」！范雲提更快方法：民眾黨主動撤銷黨籍"],"9":["2026 Netflix 3月片單推薦！《航海王》第 2 季熱血回歸、JISOO虛擬戀愛《訂閱男友》"]}},{"n":"信傳媒","d":"cmmedia.com.tw","g":"E","gl":"地方媒體","ta":286,"dc":20,"mp":[[0.0,0.0,2.1,0.0,0.0,0.0,0.0,10.4,6.2,4.2,14.6,4.2,4.2,8.3,12.5,10.4,14.6,4.2,4.2,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,10.5,13.2,5.3,18.4,15.8,7.9,7.9,5.3,7.9,0.0,2.6,5.3,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,12.9,4.8,9.7,11.3,6.5,3.2,4.8,12.9,6.5,8.1,6.5,9.7,0.0,0.0,0.0,1.6,1.6],[0.0,0.0,0.0,0.0,0.0,1.9,0.0,16.7,9.3,1.9,9.3,13.0,7.4,5.6,11.1,13.0,7.4,1.9,0.0,0.0,0.0,0.0,1.9,0.0],[0.0,0.0,0.0,0.0,2.0,0.0,0.0,13.7,7.8,5.9,11.8,9.8,7.8,3.9,9.8,9.8,9.8,5.9,2.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,5.3,21.1,10.5,10.5,5.3,10.5,10.5,5.3,15.8,5.3,0.0,0.0,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,7.1,7.1,14.3,7.1,14.3,7.1,7.1,14.3,7.1,14.3,0.0,0.0,0.0,0.0,0.0,0.0,0.0]],"mr":[[0,0,1,0,0,0,0,5,3,2,7,2,2,4,6,5,7,2,2,0,0,0,0,0],[0,0,0,0,0,0,0,4,5,2,7,6,3,3,2,3,0,1,2,0,0,0,0,0],[0,0,0,0,0,0,0,8,3,6,7,4,2,3,8,4,5,4,6,0,0,0,1,1],[0,0,0,0,0,1,0,9,5,1,5,7,4,3,6,7,4,1,0,0,0,0,1,0],[0,0,0,0,1,0,0,7,4,3,6,5,4,2,5,5,5,3,1,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,4,2,2,1,2,2,1,3,1,0,0,0,0,0,0],[0,0,0,0,0,0,0,1,1,2,1,2,1,1,2,1,2,0,0,0,0,0,0,0]],"dt":[48,38,62,54,51,19,14],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"16":["高雄智慧城市展》日月光展示AI節能實力　高雄市長陳其邁和副市長、觀光局長來參訪","順應川普要求　日歐6國發表聯合聲明支持確保荷姆茲海峽的航行自由"],"15":["高雄智慧城市展》永豐餘展示智慧能源解方案  化身能源服務聚合商","中華精測桃園三廠動土典禮　擴大接單能力"],"14":["書摘》藝術療癒悲傷   啟發創意、將悲傷練習應用於實務的50個表達性藝術活動","盧秀燕訪美帶回軍購「最終版本」？　藍營堅持「3800億+N」"],"13":["總統賴清德親任監交人　廖紫岑接磐石會會長　共同向巨大創辦人劉金標致敬","卓榮泰曝中選會提名秘辛　狠嗆藍白「言而無信」：將再次提名落選3人"],"12":["土耳其交換分享—屬於土耳其的浪漫愛","「檳榔糖葫蘆」進夜市　一級致癌物變零食？民團：檳榔專法未上路成關鍵破口"],"10":["永慶房屋：政策調控與貸款緊縮續行 七都公寓總價均下修","朝日記者問題引發早川會陷入「偷襲珍珠港」尷尬　日本網友憤而發起「解體朝日新聞」的標籤"],"9":["金馬創作歌手李英宏挑戰身心極限   為《死亡之握：鬼牽手》操刀關鍵歌曲〈牽手歌〉及全片配樂","中央社宅放寬共同居住資格　首季392戶申請至4月7日止"],"11":["2026大選》鄭朝方民調落後徐欣瑩與陳見賢　學者曝玄機：可能有綠支持者假扮藍支持者","盧秀燕與美議員就軍購達建設性談話　盼找出共同方案"],"8":["春分養生重在調肝養血　中醫：掌握4大原則　女性調體質事半功倍","從對話到行動！黃仁勳點名OpenClaw將開啟自主AI代理新時代"],"7":["央行二戶限貸放寬至6成　換屋族迎甘霖、做面子給財團和建商","伊朗攻擊鄰國油氣設施　布蘭特原油飆上110美元　印度家用桶裝瓦斯黑市價格飆4倍"],"18":["SEMI年度調查：AI帶動半導體產值2026提早破兆美元　2035年衝刺2兆大關","台達電2026智慧城市展導入輝達數位雙生技術　展示iCMS智慧管理平台"],"17":["輝達GTC》德州儀器攜手NVIDIA推出完整800V直流電源架構","舞動未來　女性舞者如何定義力量與美　台灣B-girl舞出跨世代嘻哈精神"],"22":["輝達發布 Nemotron 3 Super模型 具備 1200 億參數的開放模型","阿聯酋航空載杜拜機場滯留旅客返航　首批台灣兩家旅行社3團順利回桃機"],"23":["橘色惡魔121期獻唱311復興歌曲〈花は咲く〉　紀念台日深厚友情"],"2":["為地面戰做準備　美軍將增派第三批航母打擊群往伊朗"],"4":["馬士基緊急公告暫停阿聯酋等7國貨櫃訂單　沙國主導GCC欲建立跨國反無人機與飛彈攔截網"],"5":["阿聯酋與卡達空軍建立情報共享鏈　卡達與沙烏地王儲討論共同防禦"]}},{"n":"勁報","d":"twpowernews.com","g":"E","gl":"地方媒體","ta":284,"dc":20,"mp":[[30.6,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2.8,0.0,5.6,0.0,0.0,0.0,2.8,0.0,2.8,27.8,11.1,2.8,2.8,2.8,2.8,5.6],[36.4,0.0,0.0,0.0,0.0,0.0,0.0,3.0,0.0,0.0,0.0,9.1,3.0,6.1,0.0,0.0,0.0,6.1,3.0,12.1,3.0,6.1,6.1,6.1],[26.3,0.0,0.0,0.0,1.8,0.0,0.0,1.8,0.0,0.0,1.8,1.8,5.3,1.8,0.0,1.8,5.3,7.0,17.5,3.5,1.8,5.3,7.0,10.5],[19.0,0.0,1.7,3.4,0.0,1.7,0.0,3.4,0.0,0.0,1.7,6.9,8.6,1.7,5.2,6.9,6.9,3.4,1.7,5.2,6.9,3.4,3.4,8.6],[14.3,1.8,0.0,0.0,0.0,0.0,0.0,3.6,1.8,5.4,5.4,7.1,0.0,3.6,7.1,1.8,1.8,7.1,7.1,1.8,5.4,3.6,8.9,12.5],[29.0,3.2,0.0,0.0,0.0,0.0,0.0,3.2,25.8,0.0,0.0,0.0,0.0,0.0,0.0,0.0,9.7,0.0,3.2,0.0,3.2,0.0,6.5,16.1],[30.8,7.7,7.7,0.0,7.7,0.0,0.0,7.7,0.0,0.0,0.0,0.0,0.0,0.0,7.7,0.0,7.7,0.0,7.7,7.7,7.7,0.0,0.0,0.0]],"mr":[[11,0,0,0,0,0,0,0,1,0,2,0,0,0,1,0,1,10,4,1,1,1,1,2],[12,0,0,0,0,0,0,1,0,0,0,3,1,2,0,0,0,2,1,4,1,2,2,2],[15,0,0,0,1,0,0,1,0,0,1,1,3,1,0,1,3,4,10,2,1,3,4,6],[11,0,1,2,0,1,0,2,0,0,1,4,5,1,3,4,4,2,1,3,4,2,2,5],[8,1,0,0,0,0,0,2,1,3,3,4,0,2,4,1,1,4,4,1,3,2,5,7],[9,1,0,0,0,0,0,1,8,0,0,0,0,0,0,0,3,0,1,0,1,0,2,5],[4,1,1,0,1,0,0,1,0,0,0,0,0,0,1,0,1,0,1,1,1,0,0,0]],"dt":[36,33,57,58,56,31,13],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07","03-14","03-21"],"6":["03-08","03-15"]},"ht":{"16":["萌娃勇闖派所 文元幼園童趣參訪學安全-勁報 Power News","新營聯合徵才現人潮！24企業釋650職缺 薪資上看65K-勁報 Power News"],"7":["金大陶廠DIY結合SEL與宿舍幹部訓練 促進安全多元學習-勁報 Power News","活動倒數計時！金鑽婚報名至3/31截止-勁報 Power News"],"1":["諾貝爾生醫獎得主史凡提.帕波成大分享古DNA如何揭現代人類起源-勁報 Power News","南臺科大USR神農街超萌花燈謝幕 化身永續路燈-勁報 Power News"],"0":["崑山科大成立互樂系搶攻AI數位娛樂潮！企業搶才先簽約-勁報 Power News","春祭大成至聖先師孔子釋奠典禮 黃偉哲率各界循古禮展文化底蘊-勁報 Power News"],"23":["金門榮服處國軍屆退官兵權益說明會 輔導會跨海宣導權益-勁報 Power News","臺南榮服處×高榮辦榮民數位轉型-安心御老訓練課程-勁報 Power News"],"22":["南市推校園實踐身障者權利公約 共創優質融合教育環境-勁報 Power News","南大幼教成果展 3/29邀親子共享學習與想像時光-勁報 Power News"],"20":["屏東榮家感謝威盛信望愛慈善基金會 復活節溫馨關懷長輩-勁報 Power News","屏東榮服處關懷訪視榮民眷宣導榮總綠色通道-勁報 Power News"],"18":["臺東榮服處結合就業中心協辦媒合徵才-勁報 Power News","臺南農村好物進駐愛買通路 邀您一次買齊支持在地農業-勁報 Power News"],"17":["南臺科大流行音樂產業系畢業巡演 產學攜手亞克先進新典範-勁報 Power News","北榮偕榮服處拜會金門醫院說明安心御老平台-勁報 Power News"],"14":["企業董座吳勝豐贈南市醫逾80萬元 支持安寧照護 -勁報 Power News","台南三井Outlet Park二期開幕 西松屋美菜莉首次來台展店-勁報 Power News"],"13":["中華醫大校園就博會近百產企徵才 釋1700職缺-勁報 Power News","苗栗榮服處與志工齊推安心御老 結合客庄文化服務榮民眷-勁報 Power News"],"11":["崑山科大資管系表揚產攜優秀僑生 產學並進展實力 -勁報 Power News","臺南3場徵才546工作機會 先僱後訓助就業-勁報 Power News"],"10":["金門限定！金寧石蚵文化季「超頂!千人剝蚵大挑戰」啓動-勁報 Power News","金門春日觀光最強檔！金寧石蚵文化季4/1開跑-勁報 Power News"],"9":["適性揚才見成效 華盛頓高中115學年度繁星推薦再創佳績-勁報 Power News","活動倒數計時！金鑽婚報名至3/31截止-勁報 Power News"],"8":["金門培育日照復能專業種子團隊 強化長照服務品質-勁報 Power News","臺南三井Outlet2期登場 交通攻略看這-勁報 Power News"],"21":["東部地區春祭 輔導會傅正誠率團向英靈悼念致意-勁報 Power News","南市軍人服務站慰問住院士官-勁報 Power News"],"19":["花蓮榮家一站式健檢 北榮鳳林院醫護進駐 守護長者健康-勁報 Power News","東海展現私校龍頭實力 繁星推薦開紅盤 「滿招零缺額」 -勁報 Power News"],"12":["南市3/27綠鬣蜥移除教育訓練 提前建立山區防治量能　-勁報 Power News","號召青年以行動改變臺南 青年公民節327南大登場-勁報 Power News"],"5":["限量開搶！金寧石蚵文化季4大體驗報名開跑-勁報 Power News"],"2":["守護大橋開通後觀光安全-金門消辦旅館實兵演練-勁報 Power News","南市府辦二級機關主管列等調升人員研習-勁報 Power News"],"4":["單身者的財產自主，走得出家族框架嗎？從「姑姑把房子留給姪子」談遺產制度、稅制與特留分的拉鋸-勁報 P","南科營業額創新高逼近3兆 AI與先進製程需求強勁 -勁報 Power News"],"15":["金門落實微型電動二輪車聯合稽查 強化交安宣導-勁報 Power News","屏東榮家青銀共融健康同行 樂齡住民展笑顏-勁報 Power News"],"3":["陸客來金自由行逾9成 帶動地區觀光產業微轉型-勁報 Power News","金門金城替代役王柏儒獲選績優役男-勁報 Power News"]}},{"n":"最新新聞 - 富比士地產王","d":"fbs168.com","g":"E","gl":"地方媒體","ta":131,"dc":16,"mp":[[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,9.1,0.0,0.0,22.7,4.5,27.3,18.2,13.6,0.0,0.0,4.5,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,4.3,13.0,0.0,0.0,0.0,0.0,8.7,13.0,26.1,13.0,13.0,8.7,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,6.9,0.0,0.0,0.0,3.4,0.0,0.0,3.4,13.8,24.1,31.0,10.3,0.0,3.4,0.0,3.4],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3.6,3.6,3.6,7.1,3.6,10.7,28.6,17.9,3.6,10.7,3.6,3.6,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3.6,7.1,0.0,14.3,3.6,3.6,28.6,17.9,14.3,7.1,0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,100.0,0.0,0.0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],"mr":[[0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,5,1,6,4,3,0,0,1,0],[0,0,0,0,0,0,0,0,0,1,3,0,0,0,0,2,3,6,3,3,2,0,0,0],[0,0,0,0,0,0,0,0,2,0,0,0,1,0,0,1,4,7,9,3,0,1,0,1],[0,0,0,0,0,0,0,0,0,0,1,1,1,2,1,3,8,5,1,3,1,1,0,0],[0,0,0,0,0,0,0,0,0,0,1,2,0,4,1,1,8,5,4,2,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]],"dt":[22,23,29,28,28,1,0],"dd":{"0":["03-02","03-09","03-16"],"1":["03-03","03-10","03-17"],"2":["03-04","03-11","03-18"],"3":["03-05","03-12","03-19"],"4":["03-06","03-13","03-20"],"5":["03-07"],"6":[]},"ht":{"18":["房仲全聯會籲第二戶貸款成數提高至8成　王瑞祺：象徵意義大於實質效益","華固斥資30億首插旗正信義計畫區　再大發股利！每股擬配8.5元"],"17":["彰化房市2025實登揭密！蛋白區靠高CP值逆勢突圍","央行微鬆綁第二戶、營建股小漲慶祝！ 建商大老：總量管制未同步配套會看得到、排不到"],"16":["房市進入「重新定價」關鍵轉折　資金流向商用　買方市場成立","李同榮「三微效應」揭政策象徵意義　換屋市場仍困於 18 個月魔咒"],"13":["目標年營業額50億！台南三井二期開幕 試營運三天堪比假日來店客","台灣金聯平價宅加碼回饋！宮文萍：售價二成可5年免息分期付款"],"19":["央行每月盯 34 家銀行放款 楊金龍要了解非喝咖啡","楊金龍否認選舉考量 理監事內部曾有反對聲"],"10":["黃仁勳指AI難代職人工法！台中建商瘋「1：1試作」 越難蓋、越保值成趨勢","限貸令重擊！彰化不動產交易量墜至兩年新低 專家曝老屋換屋潮受壓抑"],"21":["仁武百年聚落真面目？住戶求「留住祖產」高市府踢爆：公地蓋道場、停跑車還轉租","亞泥多角化經營奏效　連8年獲利破百億大關！擬配發現金股利 2.3 元"],"15":["台積宅討論熱潮再起 這一區還有3字頭、全供餐社區","小資女翻修老宅找上裝修平台砸下百萬元　慘遇「裝修蟑螂」成爛尾屋"],"20":["購屋糾紛「建材不符」奪冠、租屋最怕扣押金！南市府揭露五大爭議陷阱","量縮價穩！台中329檔期推估600億 品牌建商鎖定「三屯區」"],"9":["省錢大作戰   房屋稅自住優惠別錯過    把握3月22日申請期限"],"22":["昔麥得「吞火案」土地近億元成交！台南東區公保地卡位解編身價先漲"],"12":["2025年台南房市創價集中上半年！蛋黃區創價穩健、善化解約數暫居全市之冠","台北市新案房價有鬆？單坪7字頭找得到了！專家：接下來還有"],"14":["千坪基地支撐「獨立會館」 品牌建商搶攻高資產自住客","專訪大台南不動產建築公會理事長胡富文：解析台南地產新版圖5大觀察"],"11":["高雄五大商圈新舊屋價差逾20萬！河堤生活圈驚現房價倒掛","台中1月預售買氣陷苦戰！三屯區仍是支撐熱點"],"23":["台南市府偕三大建築公會聯手 啟動營建土方多元處理新制"],"8":["小孩哭鬧擾鄰  媽媽被罰1000元 法官判決結果超逆轉","中籤率不到13%！台南「宜居小東」2,944人爭搶376戶 鐵路地下化紅利加持"]}}],"t":[{"k":"黃金","v":"10萬+"},{"k":"土地公生日","v":"10萬+"},{"k":"孫燕姿演唱會","v":"10萬+"},{"k":"極限返航","v":"5萬+"},{"k":"hbl","v":"5萬+"},{"k":"bts","v":"5萬+"},{"k":"周子瑜","v":"5萬+"},{"k":"謝金燕","v":"5萬+"},{"k":"方志友","v":"5萬+"},{"k":"wbc冠軍賽","v":"5萬+"},{"k":"line 收費","v":"2萬+"},{"k":"巴黎世家塑膠袋","v":"2萬+"},{"k":"廖益賢","v":"2萬+"},{"k":"bts 演唱會","v":"2萬+"},{"k":"張淳淳","v":"2萬+"},{"k":"信驊","v":"2萬+"},{"k":"油價","v":"2萬+"},{"k":"繁星放榜","v":"2萬+"},{"k":"旺宏股價","v":"2萬+"},{"k":"美光","v":"2萬+"},{"k":"地震","v":"2萬+"},{"k":"chatgpt","v":"2萬+"},{"k":"桃園天氣","v":"2萬+"},{"k":"台指期夜盤","v":"1萬+"},{"k":"賴品妤","v":"1萬+"},{"k":"陳重銘","v":"1萬+"},{"k":"重機甜心","v":"1萬+"},{"k":"hbl 決賽","v":"1萬+"},{"k":"赤血沙漠","v":"1萬+"},{"k":"晚安小雞","v":"1萬+"},{"k":"smci","v":"1萬+"},{"k":"chuck norris","v":"1萬+"},{"k":"tangy td","v":"1萬+"},{"k":"羅禮士","v":"1萬+"},{"k":"徐漢","v":"1萬+"},{"k":"nemoclaw","v":"1萬+"},{"k":"蜘蛛人","v":"1萬+"},{"k":"nba","v":"1萬+"},{"k":"yahoo","v":"1萬+"},{"k":"旺宏","v":"1萬+"},{"k":"川普","v":"5,000+"},{"k":"紅茶巴士","v":"5,000+"},{"k":"百果山","v":"5,000+"},{"k":"李孝亮","v":"5,000+"},{"k":"你好1983","v":"5,000+"},{"k":"邁阿密大師賽","v":"5,000+"},{"k":"00400a","v":"5,000+"},{"k":"張煥禎","v":"5,000+"},{"k":"王韡蒨","v":"5,000+"},{"k":"吳婉君","v":"5,000+"},{"k":"清明連假","v":"5,000+"},{"k":"魔術 對 湖人","v":"5,000+"},{"k":"王浩一","v":"5,000+"},{"k":"高市早苗","v":"5,000+"},{"k":"老鷹 對 勇士","v":"5,000+"},{"k":"春分","v":"5,000+"},{"k":"東勢林場","v":"5,000+"},{"k":"曹存慧","v":"5,000+"},{"k":"line 櫻花","v":"5,000+"},{"k":"唐禹哲","v":"5,000+"},{"k":"薛楷莉","v":"5,000+"},{"k":"四巫日","v":"5,000+"},{"k":"ㄅ級分","v":"5,000+"},{"k":"殷碩韓","v":"5,000+"},{"k":"高端疫苗","v":"5,000+"},{"k":"子瑜 711 小卡","v":"5,000+"},{"k":"活塞 對 勇士","v":"5,000+"},{"k":"劉世芳","v":"5,000+"},{"k":"甜心卡","v":"5,000+"},{"k":"熱火 對 湖人","v":"5,000+"},{"k":"airpods max 2","v":"5,000+"},{"k":"5274","v":"5,000+"},{"k":"聯準會","v":"5,000+"},{"k":"鴻海股價","v":"5,000+"},{"k":"威剛","v":"5,000+"},{"k":"火箭 對 湖人","v":"5,000+"},{"k":"火箭 對 湖人","v":"5,000+"},{"k":"巫師 對 勇士","v":"5,000+"},{"k":"地震速報","v":"5,000+"},{"k":"台鐵","v":"5,000+"},{"k":"輝達","v":"5,000+"},{"k":"google","v":"5,000+"},{"k":"00918","v":"5,000+"},{"k":"539開獎號碼","v":"5,000+"},{"k":"永光","v":"5,000+"},{"k":"兆赫","v":"5,000+"},{"k":"nba","v":"5,000+"},{"k":"foodpanda","v":"2,000+"},{"k":"伊朗","v":"2,000+"},{"k":"壽司郎庫洛魔法使","v":"2,000+"},{"k":"美伊","v":"2,000+"},{"k":"浴血黑幫不朽傳奇","v":"2,000+"},{"k":"廖先翔","v":"2,000+"},{"k":"磁暴","v":"2,000+"},{"k":"蘇嵐鴻","v":"2,000+"},{"k":"北川景子","v":"2,000+"},{"k":"菱生","v":"2,000+"},{"k":"梅姨","v":"2,000+"},{"k":"黃勃睿","v":"2,000+"},{"k":"兵工廠 對 曼城","v":"2,000+"},{"k":"太陽 對 暴龍","v":"2,000+"},{"k":"趙雨凡","v":"2,000+"},{"k":"crimson desert","v":"2,000+"},{"k":"戴佩妮","v":"2,000+"},{"k":"李傅中武","v":"2,000+"},{"k":"布布","v":"2,000+"},{"k":"文昌帝君生日","v":"2,000+"},{"k":"獵人快閃店","v":"2,000+"},{"k":"開齋節","v":"2,000+"},{"k":"中鋼","v":"2,000+"},{"k":"喀麥隆","v":"2,000+"},{"k":"焦凡凡","v":"2,000+"},{"k":"島嶼天光梗","v":"2,000+"},{"k":"何麗梅","v":"2,000+"},{"k":"朱海君","v":"2,000+"},{"k":"精金","v":"2,000+"},{"k":"柯一正","v":"2,000+"},{"k":"前田敦子","v":"2,000+"},{"k":"3/20","v":"2,000+"},{"k":"酒條通","v":"2,000+"},{"k":"珍珠港事件","v":"2,000+"},{"k":"中國信託","v":"2,000+"},{"k":"吳中純","v":"2,000+"},{"k":"護國山台中寺","v":"2,000+"},{"k":"錸德","v":"2,000+"},{"k":"小s","v":"2,000+"},{"k":"權欲之巔","v":"2,000+"},{"k":"鍾明軒","v":"2,000+"},{"k":"麻糬","v":"2,000+"},{"k":"2026 first stand","v":"2,000+"},{"k":"央行","v":"2,000+"},{"k":"塞爾提克 對 勇士","v":"2,000+"},{"k":"三星罷工","v":"2,000+"},{"k":"永豐金股東會紀念品","v":"2,000+"},{"k":"拉里賈尼","v":"2,000+"},{"k":"hola","v":"2,000+"},{"k":"精金做什麼","v":"2,000+"},{"k":"map","v":"2,000+"},{"k":"可不可","v":"2,000+"},{"k":"nolan mclean","v":"2,000+"},{"k":"plain me","v":"2,000+"},{"k":"瑞軒","v":"2,000+"},{"k":"李璇","v":"2,000+"},{"k":"養龍蝦","v":"2,000+"},{"k":"周子瑜 711","v":"2,000+"},{"k":"101登高賽","v":"2,000+"},{"k":"dlss5","v":"2,000+"},{"k":"巴塞隆納 對 紐卡索聯","v":"2,000+"},{"k":"live nation","v":"2,000+"},{"k":"輔大之狼","v":"2,000+"}],"m":{"total":130327,"range":"2026/3/02 – 3/21","mc":29,"tc":772}};
+const HMDATA=RAW.h, TRENDS=RAW.t, META=RAW.m;
+document.getElementById('statTotal').textContent=META.total.toLocaleString();
+document.getElementById('statMedia').textContent=META.mc;
+document.getElementById('statRange').textContent=META.range;
+document.getElementById('statTrends').textContent=META.tc;
+const tS=document.getElementById('trendsScroll');
+TRENDS.slice(0,60).forEach(t=>{const c=document.createElement('span');c.className='trend-chip';c.innerHTML=`${t.k}<span class="trend-vol">${t.v}</span>`;tS.appendChild(c);});
+
+const GL={A:'A群 綜合入口',B:'B群 財經投資',C:'C群 雜誌深度',D:'D群 主題類媒體',E:'E群 地方利基'};
+const GC={A:'#BF4926',B:'#007EA7',C:'#2A9D8F',D:'#6C5B7B',E:'#8B8B8B'};
+const DOW=['週一','週二','週三','週四','週五','週六','週日'];
+function lerp(a,b,t){const ah=parseInt(a.slice(1),16),bh=parseInt(b.slice(1),16);const ar=(ah>>16)&255,ag=(ah>>8)&255,ab=ah&255,br=(bh>>16)&255,bg2=(bh>>8)&255,bb=bh&255;return`rgb(${Math.round(ar+(br-ar)*t)},${Math.round(ag+(bg2-ag)*t)},${Math.round(ab+(bb-ab)*t)})`;}
+function getColor(v,mx){if(v===0)return'#f8f9fa';const r=Math.min(v/Math.max(mx,1),1);const s=[[0,'#FFF3E0'],[.2,'#FFE0B2'],[.4,'#FFB74D'],[.6,'#FF9800'],[.8,'#E65100'],[1,'#BF360C']];for(let i=1;i<s.length;i++){if(r<=s[i][0]){const t2=(r-s[i-1][0])/(s[i][0]-s[i-1][0]);return lerp(s[i-1][1],s[i][1],t2);}}return'#BF360C';}
+function getTrendsForHour(h){const b=h<6?0:h<12?1:h<18?2:3;return TRENDS.slice(b*15,b*15+5).map(t=>t.k);}
+
+function renderHM(group,showNums){
+  const el=document.getElementById('hmContent');const groups=group==='ALL'?['A','B','C','D','E']:[group];let html='';
+  for(const g of groups){const media=HMDATA.filter(m=>m.g===g);if(!media.length)continue;
+    html+=`<div class="group-section"><div class="group-header" style="color:${GC[g]};border-color:${GC[g]}">${GL[g]}（${media.length} 家）</div>`;
+    for(const m of media){const mx=m.mp,maxVal=Math.max(...mx.flat());
+      html+=`<div class="media-block"><div class="media-title"><span class="name" style="color:${GC[g]}">${m.n}</span><span class="meta">${m.d} · ${m.ta.toLocaleString()} 篇 · ${m.dc}d</span></div><div class="heatmap-wrap"><table class="heatmap"><thead><tr><th class="row-label"></th>`;
+      for(let h=0;h<24;h++)html+=`<th>${h%3===0?h:''}</th>`;
+      html+=`<th></th><th class="avg-col">日均</th></tr></thead><tbody>`;
+      for(let d=0;d<7;d++){const isWk=d>=5,dates=(m.dd[d]||[]),dateStr=dates.length?` ${dates.join(',')}`:'—';
+        html+=`<tr><td class="dow-label${isWk?' weekend':''}">${DOW[d]}${dateStr}</td>`;
+        for(let h=0;h<24;h++){const v=mx[d][h],raw=m.mr[d][h],bg=getColor(v,maxVal),tc=v>maxVal*.55?'#fff':'#666',txt=showNums&&v>0?Math.round(v):'';
+          html+=`<td class="cell" style="background:${bg};color:${tc}" data-media="${m.n}" data-group="${m.g}" data-d="${d}" data-h="${h}" data-raw="${raw}" data-pct="${v}" data-ht='${JSON.stringify(m.ht[h]||[])}'>${txt}</td>`;}
+        html+=`<td></td><td class="avg-val">${Math.round(m.dt[d])||'—'}</td></tr>`;}
+      html+=`</tbody></table></div></div>`;}
+    html+=`</div>`;}
+  el.innerHTML=html;
+}
+
+const tip=document.getElementById('tip');
+document.addEventListener('mouseover',e=>{const c=e.target.closest('td.cell');if(!c){tip.classList.remove('on');return;}
+  const media=c.dataset.media,g=c.dataset.group,d=parseInt(c.dataset.d),h=parseInt(c.dataset.h),raw=parseInt(c.dataset.raw),pct=parseFloat(c.dataset.pct);
+  let titles=[];try{titles=JSON.parse(c.dataset.ht)}catch(e){}const trends=getTrendsForHour(h);
+  tip.innerHTML=`<div class="tip-head"><span class="tip-dot" style="background:${GC[g]}"></span>${media}</div><div class="tip-row"><span class="tip-lbl">${DOW[d]} ${h}:00–${h+1}:00</span></div><hr class="tip-hr"><div class="tip-row"><span class="tip-lbl">發文數</span><span class="tip-val">${raw} 篇</span></div><div class="tip-row"><span class="tip-lbl">佔當日比例</span><span class="tip-val">${pct}%</span></div>${titles.length?`<div class="tip-title-tag">📰 該時段新聞樣本</div>${titles.map(t=>`<div class="tip-title-item">· ${t}</div>`).join('')}`:''}<div class="tip-trend"><div class="tip-trend-tag">🔍 Google Trends 同期熱搜</div><div class="tip-trend-list">${trends.join(' · ')}</div></div>`;
+  tip.classList.add('on');});
+document.addEventListener('mousemove',e=>{if(!tip.classList.contains('on'))return;const p=16;let x=e.clientX+p,y=e.clientY-10;const r=tip.getBoundingClientRect();if(x+r.width>window.innerWidth-p)x=e.clientX-r.width-p;if(y+r.height>window.innerHeight-p)y=e.clientY-r.height-p;if(y<p)y=p;tip.style.left=x+'px';tip.style.top=y+'px';});
+document.addEventListener('mouseout',e=>{if(e.target.closest&&!e.target.closest('td.cell'))tip.classList.remove('on');});
+let curG='ALL',showN=false;
+document.getElementById('hmFilters').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;curG=e.target.dataset.g;document.querySelectorAll('#hmFilters button').forEach(b=>b.classList.remove('active'));e.target.classList.add('active');renderHM(curG,showN);});
+document.getElementById('showNums').addEventListener('change',e=>{showN=e.target.checked;renderHM(curG,showN);});
+renderHM('ALL',false);
+
+// ══════ PAGE 3: HRDD MATRIX ══════
+const HRDD={risk:{"Turkey":{"A":0.75,"C":1,"D":1,"E":0.58,"F":0.75,"I":0.5,"J":0.58,"K":0.625,"L":0.75,"M":0.58,"N":0.75,"O":1,"P":1},"China":{"A":0.5,"C":1,"D":1,"E":0.533,"F":0.75,"I":1,"J":0.533,"K":0.75,"L":0.75,"M":0.533,"N":0.5,"O":1,"P":1},"Cameroon":{"A":0.75,"C":0.75,"D":0.75,"E":0.619,"F":0.75,"I":0.5,"J":0.619,"K":0.875,"L":0.75,"M":0.619,"N":0.75,"O":0.75,"P":0.75},"Côte d'Ivoire":{"A":0.5,"C":0.5,"D":0.5,"E":0.403,"F":0.25,"I":0.25,"J":0.403,"K":0.625,"L":0.25,"M":0.403,"N":0.5,"O":0.5,"P":0.5},"Cape Verde":{"A":0.25,"C":0.5,"D":0.5,"E":0.368,"F":0,"I":0,"J":0.368,"K":0.25,"L":0,"M":0.368,"N":0.25,"O":0.5,"P":0.5},"Ghana":{"A":0.5,"C":0.25,"D":0.25,"E":0.26,"F":0,"I":0.25,"J":0.26,"K":0.375,"L":0,"M":0.26,"N":0.5,"O":0.25,"P":0.25},"Portugal":{"A":0.25,"C":0.25,"D":0.25,"E":0.083,"F":0,"I":0,"J":0.083,"K":0.125,"L":0,"M":0.083,"N":0.25,"O":0.25,"P":0.25},"Taiwan":{"A":0.25,"C":0.25,"D":0.25,"E":0.057,"F":0,"I":0,"J":0.057,"K":0.125,"L":0,"M":0.057,"N":0.25,"O":0.25,"P":0.25}},
+countries:{"Taiwan":{"zh":"台灣","biz":"水泥・儲能・電池"},"China":{"zh":"中國","biz":"水泥・骨料"},"Turkey":{"zh":"土耳其","biz":"水泥・骨料"},"Portugal":{"zh":"葡萄牙","biz":"水泥"},"Côte d'Ivoire":{"zh":"象牙海岸","biz":"水泥"},"Cameroon":{"zh":"喀麥隆","biz":"水泥"},"Cape Verde":{"zh":"維德角","biz":"水泥"},"Ghana":{"zh":"迦納","biz":"水泥"}},
+issues:{"A":"強迫勞動","C":"工時","D":"工資福利","E":"多元平等","F":"言論自由","I":"思想信仰自由","J":"同工不同酬","K":"霸凌騷擾","L":"隱私權","M":"歧視","N":"童工","O":"結社自由","P":"團體協商"}};
+
+const hrddAvg={};
+for(const[c,s] of Object.entries(HRDD.risk)){const v=Object.values(s);hrddAvg[c]=v.reduce((a,b)=>a+b,0)/v.length;}
+const hrddSorted=Object.keys(hrddAvg).sort((a,b)=>hrddAvg[b]-hrddAvg[a]);
+const issueKeys=Object.keys(HRDD.issues);
+
+function riskColor(v){
+  // Warm brown gradient: 0=light cream, 1=deep brown (matching the screenshot)
+  if(v===0) return '#faf5ef';
+  const stops=[[0,'#faf0e6'],[0.25,'#e8c8a0'],[0.5,'#d4a574'],[0.75,'#b87040'],[1,'#7a3518']];
+  for(let i=1;i<stops.length;i++){
+    if(v<=stops[i][0]){
+      const t=(v-stops[i-1][0])/(stops[i][0]-stops[i-1][0]);
+      const a=stops[i-1][1],b=stops[i][1];
+      const ah=parseInt(a.slice(1),16),bh=parseInt(b.slice(1),16);
+      const r=Math.round(((ah>>16)&255)+(((bh>>16)&255)-((ah>>16)&255))*t);
+      const g=Math.round(((ah>>8)&255)+(((bh>>8)&255)-((ah>>8)&255))*t);
+      const bl=Math.round((ah&255)+((bh&255)-(ah&255))*t);
+      return`rgb(${r},${g},${bl})`;
+    }
+  }
+  return'#7a3518';
+}
+function riskTextColor(v){return v>0.55?'#fff':'#4A4A4A'}
+function avgColor(v){return v>0.6?'#BF4926':v>0.3?'#C08050':'#2A9D8F'}
+
+function renderMatrix(){
+  const tbl=document.getElementById('hrddMatrix');
+  // Header row
+  let h='<thead><tr><th class="col-country"></th>';
+  issueKeys.forEach(k=>{h+=`<th class="col-issue">${HRDD.issues[k]}</th>`;});
+  h+='<th class="col-avg">平均</th></tr></thead><tbody>';
+  // Data rows
+  hrddSorted.forEach(c=>{
+    const ci=HRDD.countries[c];const avg=hrddAvg[c];const scores=HRDD.risk[c];
+    h+=`<tr>`;
+    h+=`<td class="row-country" data-c="${c}">${ci.zh}<span class="country-zh">${c}</span></td>`;
+    issueKeys.forEach(k=>{
+      const v=scores[k]||0;
+      h+=`<td style="background:${riskColor(v)};color:${riskTextColor(v)}" data-c="${c}" data-k="${k}" data-v="${v}">${v>0?v.toFixed(2):'—'}</td>`;
+    });
+    h+=`<td class="row-avg" style="color:${avgColor(avg)}">${avg.toFixed(2)}</td>`;
+    h+=`</tr>`;
+  });
+  h+='</tbody>';
+  tbl.innerHTML=h;
+
+  // Click row to show detail
+  tbl.querySelectorAll('.row-country').forEach(td=>{
+    td.addEventListener('click',()=>{showRiskDetail(td.dataset.c);});
+  });
+}
+
+// Tooltip for matrix cells
+const mtip=document.createElement('div');mtip.className='mtip';document.body.appendChild(mtip);
+document.addEventListener('mouseover',e=>{
+  const td=e.target.closest('#hrddMatrix td[data-k]');
+  if(!td){mtip.classList.remove('on');return;}
+  const c=td.dataset.c,k=td.dataset.k,v=parseFloat(td.dataset.v);
+  const ci=HRDD.countries[c];
+  const lvl=v>0.6?'🔴 高風險':v>0.3?'🟡 中風險':v===0?'— 無數據':'🟢 低風險';
+  mtip.innerHTML=`<div class="mtip-head">${ci.zh} · ${HRDD.issues[k]}</div><div class="mtip-sub">${c} · ${k}</div><div class="mtip-score" style="color:${avgColor(v)}">${v.toFixed(3)}</div><div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">${lvl}</div>`;
+  mtip.classList.add('on');
+});
+document.addEventListener('mousemove',e=>{
+  if(!mtip.classList.contains('on'))return;
+  const p=16;let x=e.clientX+p,y=e.clientY-10;
+  const r=mtip.getBoundingClientRect();
+  if(x+r.width>window.innerWidth-p)x=e.clientX-r.width-p;
+  if(y+r.height>window.innerHeight-p)y=e.clientY-r.height-p;
+  if(y<p)y=p;
+  mtip.style.left=x+'px';mtip.style.top=y+'px';
+});
+
+function showRiskDetail(c){
+  const el=document.getElementById('riskDetail');const ci=HRDD.countries[c];const scores=HRDD.risk[c];const avg=hrddAvg[c];
+  const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  let bars='';sorted.forEach(([k,v])=>{const pct=Math.round(v*100);const col=v>0.6?'#BF4926':v>0.3?'#C08050':'#2A9D8F';
+    bars+=`<div class="risk-bar-row"><span class="risk-bar-name">${HRDD.issues[k]||k}</span><div class="risk-bar-track"><div class="risk-bar-fill" style="width:${pct}%;background:${col}"></div></div><span class="risk-bar-val">${v.toFixed(2)}</span></div>`;});
+  el.innerHTML=`<div style="padding:24px;background:var(--stone)"><div style="display:flex;align-items:baseline;gap:12px;margin-bottom:16px"><span style="font-size:20px;font-weight:900;color:var(--charcoal-dark)">${ci.zh}</span><span style="font-size:14px;color:#999">${c} · ${ci.biz}</span><span style="margin-left:auto;font-family:'DM Mono';font-size:24px;font-weight:500;color:${avgColor(avg)}">${avg.toFixed(3)}</span></div>${bars}</div>`;
+  el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+let p3Init=false;
+// p3 is default active, render immediately
+setTimeout(renderMatrix,100); p3Init=true;
+new MutationObserver(()=>{if(document.getElementById('p3').classList.contains('active')&&!p3Init){p3Init=true;setTimeout(renderMatrix,100);}
+}).observe(document.getElementById('p3'),{attributes:true,attributeFilter:['class']});
+
+// ══════ PAGE 4: SUPPLIER RISK ══════
+const SUP={matrix:[
+{n:"三五橡膠廠股份有限公司",x:5,y:6,v:9,p:2740000,t:11,r:"超高風險"},
+{n:"思愛普軟體系統股份有限公司",x:2,y:2,v:2,p:120000,t:4,r:"中風險"},
+{n:"士林電機廠股份有限公司",x:1,y:1,v:1,p:20000,t:2,r:"中風險"},
+{n:"有麒實業股份有限公司",x:1,y:1,v:1,p:20000,t:2,r:"中風險"},
+{n:"磬豐國際股份有限公司",x:1,y:1,v:1,p:20000,t:2,r:"中風險"},
+{n:"台達電子工業股份有限公司",x:1,y:1,v:1,p:20000,t:2,r:"中風險"},
+{n:"享正實業股份有限公司",x:1,y:1,v:1,p:20000,t:2,r:"中風險"},
+{n:"頂曜貨運股份有限公司",x:1,y:1,v:1,p:20000,t:2,r:"中風險"},
+{n:"金戰交通有限公司",x:1,y:1,v:1,p:20000,t:2,r:"中風險"},
+{n:"怡台企業股份有限公司",x:1,y:0,v:1,p:0,t:1,r:"中風險"},
+{n:"艾波比股份有限公司",x:1,y:0,v:1,p:0,t:1,r:"中風險"}
+]};
+
+function supRiskColor(r){return r==='超高風險'?'#BF4926':r==='高風險'?'#D47A3A':r==='中風險'?'#E6A817':'#2A9D8F'}
+
+function renderSupMatrix(){
+  const svg=document.getElementById('supMatrixSvg');
+  const W=svg.clientWidth||600,H=svg.clientHeight||600;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const pad=60,iw=W-pad*2,ih=H-pad*2;
+  let s='';
+
+  // Background quadrants
+  const zones=[
+    {x:pad,y:pad,w:iw/2,h:ih/2,fill:'rgba(191,73,38,0.06)',label:'高頻高罰'},
+    {x:pad+iw/2,y:pad,w:iw/2,h:ih/2,fill:'rgba(191,73,38,0.03)',label:'低頻高罰'},
+    {x:pad,y:pad+ih/2,w:iw/2,h:ih/2,fill:'rgba(230,168,23,0.04)',label:'高頻低罰'},
+    {x:pad+iw/2,y:pad+ih/2,w:iw/2,h:ih/2,fill:'rgba(42,157,143,0.04)',label:'低頻低罰'},
+  ];
+  // Reversed: x=freq increases right, y=severity increases up
+  zones.forEach(z=>{s+=`<rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" fill="${z.fill}"/>`;
+    s+=`<text x="${z.x+z.w/2}" y="${z.y+z.h/2}" text-anchor="middle" fill="rgba(0,0,0,0.08)" font-size="14" font-family="Noto Sans TC" font-weight="700">${z.label}</text>`;});
+
+  // Grid lines
+  for(let i=0;i<=6;i++){
+    const gx=pad+(i/6)*iw, gy=pad+(1-i/6)*ih;
+    s+=`<line x1="${gx}" y1="${pad}" x2="${gx}" y2="${pad+ih}" stroke="rgba(0,0,0,0.06)" stroke-width="0.5"/>`;
+    s+=`<line x1="${pad}" y1="${gy}" x2="${pad+iw}" y2="${gy}" stroke="rgba(0,0,0,0.06)" stroke-width="0.5"/>`;
+    s+=`<text x="${gx}" y="${pad+ih+16}" text-anchor="middle" font-family="DM Mono" font-size="10" fill="#aaa">${i}</text>`;
+    s+=`<text x="${pad-8}" y="${gy+4}" text-anchor="end" font-family="DM Mono" font-size="10" fill="#aaa">${i}</text>`;
+  }
+
+  // Axis labels
+  s+=`<text x="${pad+iw/2}" y="${H-8}" text-anchor="middle" font-family="Noto Sans TC" font-size="12" fill="#888" font-weight="500">頻率分數 →</text>`;
+  s+=`<text x="14" y="${pad+ih/2}" text-anchor="middle" font-family="Noto Sans TC" font-size="12" fill="#888" font-weight="500" transform="rotate(-90,14,${pad+ih/2})">嚴重程度分數 →</text>`;
+
+  // Data points
+  SUP.matrix.forEach((d,i)=>{
+    const cx=pad+(d.x/6)*iw+((Math.random()-.5)*12);
+    const cy=pad+(1-d.y/6)*ih+((Math.random()-.5)*12);
+    const r=Math.max(8,Math.min(28,d.t*2.5));
+    const col=supRiskColor(d.r);
+    s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" opacity="0.8" stroke="#fff" stroke-width="1.5" style="cursor:pointer" data-i="${i}"/>`;
+    if(d.t>=4){
+      const nm=d.n.replace(/股份有限公司|有限公司/g,'');
+      s+=`<text x="${cx}" y="${cy-r-6}" text-anchor="middle" font-family="Noto Sans TC" font-size="11" fill="${col}" font-weight="700" pointer-events="none">${nm}</text>`;
+    }
+  });
+
+  svg.innerHTML=s;
+
+  // Tooltip
+  let stip=document.getElementById('supTip');
+  if(!stip){stip=document.createElement('div');stip.className='mtip';stip.id='supTip';document.body.appendChild(stip);}
+  svg.querySelectorAll('circle[data-i]').forEach(c=>{
+    c.addEventListener('mouseenter',()=>{
+      const d=SUP.matrix[parseInt(c.dataset.i)];
+      stip.innerHTML=`<div class="mtip-head">${d.n}</div><div class="mtip-sub">${d.r} · 總分 ${d.t}</div><div style="margin-top:6px;font-size:12px"><div style="display:flex;justify-content:space-between;gap:16px"><span style="color:rgba(255,255,255,.5)">違規次數</span><span style="font-family:DM Mono;font-weight:500">${d.v} 次</span></div><div style="display:flex;justify-content:space-between;gap:16px"><span style="color:rgba(255,255,255,.5)">罰鍰總額</span><span style="font-family:DM Mono;font-weight:500">NT$${d.p.toLocaleString()}</span></div><div style="display:flex;justify-content:space-between;gap:16px"><span style="color:rgba(255,255,255,.5)">頻率/嚴重</span><span style="font-family:DM Mono;font-weight:500">${d.x} / ${d.y}</span></div></div>`;
+      stip.classList.add('on');});
+    c.addEventListener('mousemove',e=>{const p=16;let x=e.clientX+p,y=e.clientY-10;const r=stip.getBoundingClientRect();if(x+r.width>window.innerWidth-p)x=e.clientX-r.width-p;if(y+r.height>window.innerHeight-p)y=e.clientY-r.height-p;stip.style.left=x+'px';stip.style.top=y+'px';});
+    c.addEventListener('mouseleave',()=>{stip.classList.remove('on');});
+  });
+}
+
+function renderSupTable(){
+  const tbl=document.getElementById('supTable');
+  let h='<thead><tr><th>#</th><th>供應商</th><th>風險等級</th><th>違規次數</th><th>罰鍰總額</th><th>頻率</th><th>嚴重度</th><th>總分</th></tr></thead><tbody>';
+  SUP.matrix.forEach((d,i)=>{
+    h+=`<tr><td>${i+1}</td><td style="font-weight:700">${d.n}</td><td><span class="sup-risk-tag ${d.r}">${d.r}</span></td><td style="font-family:DM Mono">${d.v}</td><td style="font-family:DM Mono">NT$${d.p.toLocaleString()}</td><td style="font-family:DM Mono">${d.x}</td><td style="font-family:DM Mono">${d.y}</td><td style="font-family:DM Mono;font-weight:700">${d.t}</td></tr>`;
+  });
+  // Add summary row for 105 low-risk suppliers
+  h+=`<tr style="background:rgba(42,157,143,0.05)"><td></td><td style="color:#999">其餘 105 家供應商</td><td><span class="sup-risk-tag 低風險">低風險</span></td><td style="font-family:DM Mono;color:#999">0</td><td style="font-family:DM Mono;color:#999">NT$0</td><td style="font-family:DM Mono;color:#999">0</td><td style="font-family:DM Mono;color:#999">0</td><td style="font-family:DM Mono;color:#999">0</td></tr>`;
+  h+='</tbody>';
+  tbl.innerHTML=h;
+}
+
+let p4Init=false;
+new MutationObserver(()=>{if(document.getElementById('p4').classList.contains('active')&&!p4Init){p4Init=true;setTimeout(()=>{renderSupMatrix();renderSupTable();},100);}
+}).observe(document.getElementById('p4'),{attributes:true,attributeFilter:['class']});
+
+// ══════ PAGE 5: INDUSTRIAL SAFETY ══════
+const IS_DATA={
+  factory:{lat:23.114747910501976,lon:120.27750892455218,name:'台南能元科技電池廠'},
+  scenarios:{
+    A:{label:'全區失火 (Total Loss)',area:100,rate:1.2526,red:153.9,orange:354.7},
+    B:{label:'單一防火分區 (Fire Zone)',area:33.3,rate:0.4175,red:86.9,orange:195.8},
+    C:{label:'受控火災 (Controlled)',area:300,rate:3.7579,red:276.8,orange:660.4}
+  }
+};
+let isMap=null,isRedCircle=null,isOrangeCircle=null,curSc='A';
+
+function renderIsParams(sc){
+  const d=IS_DATA.scenarios[sc];
+  document.getElementById('isParams').innerHTML=`
+    <div class="is-param"><div class="is-param-val">${d.area}</div><div class="is-param-label">起火面積（m²）</div></div>
+    <div class="is-param"><div class="is-param-val">${d.rate.toFixed(3)}</div><div class="is-param-label">HF 排放速率（kg/s）</div></div>
+    <div class="is-param"><div class="is-param-val red">${d.red.toFixed(0)} m</div><div class="is-param-label">🔴 50% 致死半徑</div></div>
+    <div class="is-param"><div class="is-param-val orange">${d.orange.toFixed(0)} m</div><div class="is-param-label">🟠 1% 致死半徑</div></div>
+  `;
+}
+
+function initIsMap(){
+  const f=IS_DATA.factory;
+  isMap=L.map('isMap').setView([f.lat,f.lon],15);
+  // Street layer
+  const street=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19});
+  // Satellite layer
+  const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'© Esri',maxZoom:19});
+  sat.addTo(isMap);
+  L.control.layers({'街道圖':street,'衛星圖':sat}).addTo(isMap);
+  // Factory marker
+  L.marker([f.lat,f.lon]).addTo(isMap).bindPopup(`<b>${f.name}</b><br>火源位置`);
+  updateIsCircles('A');
+}
+
+function updateIsCircles(sc){
+  const f=IS_DATA.factory,d=IS_DATA.scenarios[sc];
+  if(isRedCircle){isMap.removeLayer(isRedCircle);isMap.removeLayer(isOrangeCircle);}
+  isOrangeCircle=L.circle([f.lat,f.lon],{radius:d.orange,color:'orange',weight:2,fillColor:'orange',fillOpacity:0.2,
+    dashArray:'6,4'}).addTo(isMap).bindTooltip(`1% 致死圈：${d.orange.toFixed(0)}m`,{permanent:false});
+  isRedCircle=L.circle([f.lat,f.lon],{radius:d.red,color:'red',weight:2,fillColor:'red',fillOpacity:0.35
+    }).addTo(isMap).bindTooltip(`50% 致死圈：${d.red.toFixed(0)}m`,{permanent:false});
+  // Fit bounds to orange circle
+  isMap.fitBounds(isOrangeCircle.getBounds().pad(0.3));
+  renderIsParams(sc);
+}
+
+// Scenario buttons
+document.getElementById('isScenarioBtns').addEventListener('click',e=>{
+  const btn=e.target.closest('.is-scenario-btn');
+  if(!btn)return;
+  curSc=btn.dataset.sc;
+  document.querySelectorAll('.is-scenario-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(isMap)updateIsCircles(curSc);
+});
+
+let p5Init=false;
+new MutationObserver(()=>{if(document.getElementById('p5').classList.contains('active')&&!p5Init){p5Init=true;setTimeout(()=>{initIsMap();renderIsParams('A');},200);}
+}).observe(document.getElementById('p5'),{attributes:true,attributeFilter:['class']});
+
+// ══════ PAGE 6: ESG FINANCIAL IMPACT ══════
+const FI_SCENARIOS = {
+  base: {
+    label: '基準情境 (BAU)',
+    risks: [
+      {id:'hr', name:'人權合規風險', prob:0.15, impact:15.2, color:'#6C5B7B',
+        items:['CSDDD 罰鍰風險 ~8 億','EU 市場禁入損失 ~5 億','合規建置成本 ~2.2 億'],
+        channel:'營收損失 + 成本增加'},
+      {id:'safety', name:'工安災害風險', prob:0.08, impact:4.6, color:'#BF4926',
+        items:['停工營收損失 ~2.5 億','復建費用 ~1.2 億','保險費上調 ~0.9 億'],
+        channel:'營收損失 + 資產減損'},
+      {id:'supply', name:'供應鏈違規風險', prob:0.25, impact:1.0, color:'#E6A817',
+        items:['裁罰轉嫁 ~0.3 億','替換供應商成本 ~0.5 億','供應中斷損失 ~0.2 億'],
+        channel:'成本增加'},
+      {id:'rep', name:'輿情聲譽風險', prob:0.20, impact:2.4, color:'#007EA7',
+        items:['品牌價值折損 ~1.2 億','ESG 評分降級融資成本 ~0.8 億','客戶流失 ~0.4 億'],
+        channel:'融資成本 + 營收損失'},
+      {id:'climate', name:'氣候轉型風險', prob:0.60, impact:21.0, color:'#2A9D8F',
+        items:['碳費衝擊 ~12.6 億（300元/噸×420萬噸）','CBAM 邊境調整 ~5.4 億','能源轉型資本支出 ~3 億'],
+        channel:'成本增加'},
+    ]
+  },
+  mid: {
+    label: '中度衝擊情境',
+    risks: [
+      {id:'hr', name:'人權合規風險', prob:0.30, impact:25.5, color:'#6C5B7B',
+        items:['CSDDD 罰鍰 ~14 億（營收5%）','多國市場限制 ~8 億','合規團隊擴編 ~3.5 億'],
+        channel:'營收損失 + 成本增加'},
+      {id:'safety', name:'工安災害風險', prob:0.15, impact:12.8, color:'#BF4926',
+        items:['重大停工 ~7 億','全面復建 ~3.5 億','保費翻倍 ~2.3 億'],
+        channel:'營收損失 + 資產減損'},
+      {id:'supply', name:'供應鏈違規風險', prob:0.40, impact:3.2, color:'#E6A817',
+        items:['供應鏈斷裂損失 ~1.5 億','緊急替換溢價 ~1.2 億','法律訴訟 ~0.5 億'],
+        channel:'成本增加'},
+      {id:'rep', name:'輿情聲譽風險', prob:0.35, impact:6.8, color:'#007EA7',
+        items:['重大負面事件品牌折損 ~3 億','信評降級融資成本 ~2.5 億','大客戶流失 ~1.3 億'],
+        channel:'融資成本 + 營收損失'},
+      {id:'climate', name:'氣候轉型風險', prob:0.75, impact:35.0, color:'#2A9D8F',
+        items:['碳費上調 ~18 億（500元/噸）','CBAM 全面實施 ~10 億','加速轉型支出 ~7 億'],
+        channel:'成本增加'},
+    ]
+  },
+  extreme: {
+    label: '極端情境',
+    risks: [
+      {id:'hr', name:'人權合規風險', prob:0.50, impact:46.0, color:'#6C5B7B',
+        items:['CSDDD 最高罰鍰 ~23 億（營收5%上限）','歐盟全面禁入 ~18 億','集團訴訟和解 ~5 億'],
+        channel:'營收損失 + 成本增加'},
+      {id:'safety', name:'工安災害風險', prob:0.25, impact:28.5, color:'#BF4926',
+        items:['多廠區連鎖事故 ~15 億','長期停工 ~8 億','政府勒令整改 ~5.5 億'],
+        channel:'營收損失 + 資產減損'},
+      {id:'supply', name:'供應鏈違規風險', prob:0.55, impact:8.0, color:'#E6A817',
+        items:['核心供應商停業 ~4 億','緊急進口溢價 ~2.5 億','客戶轉單 ~1.5 億'],
+        channel:'成本增加 + 營收損失'},
+      {id:'rep', name:'輿情聲譽風險', prob:0.50, impact:15.5, color:'#007EA7',
+        items:['國際醜聞品牌崩盤 ~8 億','信評連降融資成本 ~5 億','機構投資人撤資 ~2.5 億'],
+        channel:'融資成本 + 營收損失'},
+      {id:'climate', name:'氣候轉型風險', prob:0.90, impact:52.0, color:'#2A9D8F',
+        items:['碳費急升 ~28 億（1000元/噸）','CBAM+碳關稅雙重打擊 ~15 億','擱置資產減損 ~9 億'],
+        channel:'成本增加 + 資產減損'},
+    ]
+  }
+};
+const FI_REVENUE = 1546; // 億
+const FI_PROFIT = 112.6; // 億
+
+function renderFiKpi(sc){
+  const risks = FI_SCENARIOS[sc].risks;
+  const totalImpact = risks.reduce((s,r) => s + r.prob * r.impact, 0);
+  const adjProfit = FI_PROFIT - totalImpact;
+  const pctLoss = (totalImpact / FI_PROFIT * 100);
+  document.getElementById('fiKpi').innerHTML = `
+    <div class="fi-kpi"><div class="fi-kpi-val neutral">${FI_PROFIT.toFixed(1)}</div><div class="fi-kpi-label">2024 稅後淨利（億元）</div><div class="fi-kpi-sub">基線</div></div>
+    <div class="fi-kpi"><div class="fi-kpi-val negative">-${totalImpact.toFixed(1)}</div><div class="fi-kpi-label">ESG 風險期望損失（億元）</div><div class="fi-kpi-sub">Σ 機率×衝擊</div></div>
+    <div class="fi-kpi"><div class="fi-kpi-val ${adjProfit>0?'positive':'negative'}">${adjProfit.toFixed(1)}</div><div class="fi-kpi-label">風險調整後淨利（億元）</div><div class="fi-kpi-sub">${pctLoss>0?'-'+pctLoss.toFixed(1)+'%':'+'+(-pctLoss).toFixed(1)+'%'} 衝擊</div></div>
+  `;
+}
+
+function renderFiWaterfall(sc){
+  const svg = document.getElementById('fiWaterfall');
+  const risks = FI_SCENARIOS[sc].risks;
+  const totalImpact = risks.reduce((s,r) => s + r.prob * r.impact, 0);
+  const adjProfit = FI_PROFIT - totalImpact;
+
+  const items = [
+    {label:'稅後淨利\n(基線)', val:FI_PROFIT, type:'start', color:'#4A4A4A'},
+    ...risks.map(r => ({label:r.name, val: -(r.prob * r.impact), type:'loss', color:r.color, prob:r.prob, raw:r.impact})),
+    {label:'風險調整\n後淨利', val:adjProfit, type:'end', color:adjProfit>0?'#2A9D8F':'#BF4926'}
+  ];
+
+  const W = 1120, H = 520, padL = 70, padR = 40, padT = 50, padB = 90;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  const barW = Math.min(110, chartW / items.length * 0.72);
+  const gap = (chartW - barW * items.length) / (items.length - 1);
+  const maxVal = FI_PROFIT * 1.1;
+  const yScale = chartH / maxVal;
+
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  // Grid
+  for(let v = 0; v <= maxVal; v += 20){
+    const y = padT + chartH - v * yScale;
+    s += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="rgba(0,0,0,0.05)" stroke-width="0.5"/>`;
+    if(v % 40 === 0) s += `<text x="${padL-10}" y="${y+4}" text-anchor="end" font-family="DM Mono" font-size="12" fill="#bbb">${v}</text>`;
+  }
+
+  let running = 0;
+  items.forEach((item, i) => {
+    const x = padL + i * (barW + gap);
+    let barTop, barH;
+
+    if(item.type === 'start'){
+      barTop = padT + chartH - item.val * yScale;
+      barH = item.val * yScale;
+      running = item.val;
+    } else if(item.type === 'end'){
+      barTop = padT + chartH - item.val * yScale;
+      barH = Math.abs(item.val) * yScale;
+    } else {
+      const newRunning = running + item.val;
+      barTop = padT + chartH - running * yScale;
+      barH = Math.abs(item.val) * yScale;
+      if(i > 0){
+        const prevX = padL + (i-1) * (barW + gap) + barW;
+        const connY = padT + chartH - running * yScale;
+        s += `<line x1="${prevX}" y1="${connY}" x2="${x}" y2="${connY}" stroke="rgba(0,0,0,0.12)" stroke-width="1" stroke-dasharray="4,3"/>`;
+      }
+      running = newRunning;
+    }
+
+    if(item.type === 'loss' && i === items.length - 2){
+      const nextX = padL + (i+1) * (barW + gap);
+      const connY = padT + chartH - running * yScale;
+      s += `<line x1="${x+barW}" y1="${connY}" x2="${nextX}" y2="${connY}" stroke="rgba(0,0,0,0.12)" stroke-width="1" stroke-dasharray="4,3"/>`;
+    }
+
+    const opacity = item.type === 'loss' ? 0.85 : 0.95;
+    s += `<rect x="${x}" y="${barTop}" width="${barW}" height="${Math.max(barH,2)}" fill="${item.color}" opacity="${opacity}" rx="2"/>`;
+
+    const valLabel = item.type === 'loss' ? item.val.toFixed(1) : item.val.toFixed(1);
+    const valInside = item.type === 'loss' && barH > 24;
+    s += `<text x="${x+barW/2}" y="${valInside ? barTop+barH/2+5 : barTop-8}" text-anchor="middle" font-family="DM Mono" font-size="14" font-weight="700" fill="${valInside?'#fff':item.color}">${valLabel}</text>`;
+
+    if(item.type === 'loss' && item.prob){
+      s += `<text x="${x+barW/2}" y="${barTop+barH+16}" text-anchor="middle" font-family="DM Mono" font-size="11" fill="#bbb">P=${(item.prob*100).toFixed(0)}%</text>`;
+    }
+
+    const lines = item.label.split('\n');
+    lines.forEach((line,li) => {
+      s += `<text x="${x+barW/2}" y="${padT+chartH+36+li*16}" text-anchor="middle" font-family="Noto Sans TC" font-size="${item.type==='loss'?'12':'13'}" font-weight="${item.type==='loss'?'400':'700'}" fill="${item.type==='loss'?'#888':'#444'}">${line}</text>`;
+    });
+  });
+
+  s += '</svg>';
+  svg.innerHTML = s;
+}
+
+function renderFiDetails(sc){
+  const risks = FI_SCENARIOS[sc].risks;
+  document.getElementById('fiDetails').innerHTML = risks.map(r => {
+    const expected = (r.prob * r.impact).toFixed(1);
+    return `<div class="fi-detail-card" style="border-left-color:${r.color}">
+      <div class="fi-detail-card-title">${r.name}</div>
+      <div class="fi-detail-card-impact">-${expected} 億</div>
+      <div class="fi-detail-card-items">${r.items.map(it=>'· '+it).join('<br>')}</div>
+      <div class="fi-detail-card-prob">機率 ${(r.prob*100).toFixed(0)}% × 最大衝擊 ${r.impact.toFixed(1)} 億<br>→ 期望損失 ${expected} 億<br>${r.channel}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderFi(sc){
+  renderFiKpi(sc);
+  renderFiWaterfall(sc);
+  renderFiDetails(sc);
+}
+
+// Scenario buttons
+document.getElementById('fiScBtns').addEventListener('click',e=>{
+  const btn=e.target.closest('.fi-scenario-btn');
+  if(!btn)return;
+  document.querySelectorAll('.fi-scenario-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFi(btn.dataset.sc);
+});
+
+let p6Init=false;
+new MutationObserver(()=>{if(document.getElementById('p6').classList.contains('active')&&!p6Init){p6Init=true;setTimeout(()=>renderFi('base'),100);}
+}).observe(document.getElementById('p6'),{attributes:true,attributeFilter:['class']});
+</script>
+</body>
+</html>
