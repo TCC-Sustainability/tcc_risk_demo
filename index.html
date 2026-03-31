@@ -225,51 +225,6 @@ table.heatmap td.avg-val{text-align:center;font-family:'DM Mono',monospace;font-
 .sup-detail.open{display:block}
 .sup-detail-item{padding:4px 0;border-bottom:1px solid rgba(0,0,0,0.04)}
 
-/* ══════ PAGE 5: INDUSTRIAL SAFETY ══════ */
-.is-scenario-btns{display:flex;gap:8px;margin-bottom:24px}
-.is-scenario-btn{padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid #ddd;
-  background:#fff;color:#666;font-family:'Noto Sans TC',sans-serif;transition:all .15s}
-.is-scenario-btn.active{border-color:var(--rust);background:var(--rust);color:#fff}
-.is-scenario-btn:hover:not(.active){border-color:#999}
-.is-map-container{width:100%;height:500px;margin-bottom:24px;position:relative;z-index:1}
-.is-params{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
-.is-param{background:var(--stone);padding:20px;text-align:center}
-.is-param-val{font-family:'DM Mono',monospace;font-size:28px;font-weight:700}
-.is-param-val.red{color:var(--rust)} .is-param-val.orange{color:#E67E22}
-.is-param-label{font-size:11px;color:#999;margin-top:4px}
-.is-legend{display:flex;align-items:center;gap:20px;padding:16px 0;border-top:1px solid #e0e0e0;
-  margin-bottom:32px;font-size:12px;color:#888}
-.is-legend-dot{width:16px;height:16px;border-radius:50%;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:6px}
-.is-formula{background:var(--stone);padding:24px;margin-bottom:32px;font-size:12px;line-height:1.8;color:#777}
-.is-formula-title{font-size:13px;font-weight:700;color:var(--charcoal-dark);margin-bottom:8px}
-.is-formula code{font-family:'DM Mono',monospace;background:rgba(0,0,0,0.04);padding:2px 6px;font-size:11px}
-
-/* ══════ PAGE 6: ESG FINANCIAL IMPACT ══════ */
-.fi-scenario-btns{display:flex;gap:8px;margin-bottom:32px}
-.fi-scenario-btn{padding:10px 24px;font-size:13px;font-weight:600;cursor:pointer;border:2px solid #ddd;
-  background:#fff;color:#666;font-family:'Noto Sans TC',sans-serif;transition:all .15s}
-.fi-scenario-btn.active{border-color:var(--charcoal-dark);background:var(--charcoal-dark);color:#fff}
-.fi-scenario-btn:hover:not(.active){border-color:#999}
-.fi-kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:40px}
-.fi-kpi{background:var(--stone);padding:24px;text-align:center}
-.fi-kpi-val{font-family:'DM Mono',monospace;font-size:36px;font-weight:700;line-height:1}
-.fi-kpi-val.positive{color:var(--teal)} .fi-kpi-val.negative{color:var(--rust)} .fi-kpi-val.neutral{color:var(--charcoal-dark)}
-.fi-kpi-label{font-size:12px;color:#999;margin-top:6px}
-.fi-kpi-sub{font-family:'DM Mono',monospace;font-size:11px;color:#bbb;margin-top:4px}
-.fi-waterfall-wrap{margin:0 -8px 40px}
-.fi-waterfall-svg{width:100%;display:block}
-.fi-detail-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:40px}
-.fi-detail-card{background:var(--stone);padding:16px;border-left:4px solid #ddd;transition:all .15s}
-.fi-detail-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
-.fi-detail-card-title{font-size:12px;font-weight:700;color:var(--charcoal-dark);margin-bottom:8px}
-.fi-detail-card-impact{font-family:'DM Mono',monospace;font-size:20px;font-weight:700;color:var(--rust)}
-.fi-detail-card-items{margin-top:8px;font-size:11px;color:#888;line-height:1.7}
-.fi-detail-card-prob{font-family:'DM Mono',monospace;font-size:10px;color:#aaa;margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.06)}
-.fi-formula{background:var(--stone);padding:20px 24px;margin-bottom:32px;font-size:12px;line-height:1.8;color:#888}
-.fi-formula code{font-family:'DM Mono',monospace;background:rgba(0,0,0,0.04);padding:2px 6px;font-size:11px}
-.fi-demo-tag{display:inline-block;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;
-  text-transform:uppercase;color:var(--rust);background:rgba(191,73,38,0.08);padding:3px 10px;margin-bottom:16px}
-
 /* ══════ PAGE 7: CLIMATE RISK ══════ */
 .cr-controls{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}
 .cr-control-card{background:var(--stone);padding:20px 24px}
@@ -312,35 +267,27 @@ table.heatmap td.avg-val{text-align:center;font-family:'DM Mono',monospace;font-
       人權環境風險預判
       <span class="nav-tab-num">01</span>
     </div>
-    <div class="nav-tab" data-page="p5">
-      工業安全風險預判
-      <span class="nav-tab-num">02</span>
-    </div>
-    <div class="nav-tab" data-page="p4">
+<div class="nav-tab" data-page="p4">
       價值鏈風險預判
-      <span class="nav-tab-num">03</span>
+      <span class="nav-tab-num">02</span>
     </div>
     <div class="nav-tab" data-page="p2">
       輿情風險預判
-      <span class="nav-tab-num">04</span>
+      <span class="nav-tab-num">03</span>
     </div>
     <div class="nav-tab" data-page="p1">
       台泥網路聲量預判
-      <span class="nav-tab-num">05</span>
+      <span class="nav-tab-num">04</span>
     </div>
     <div class="nav-tab" data-page="p7">
       減碳合規風險預判
-      <span class="nav-tab-num">06</span>
+      <span class="nav-tab-num">05</span>
     </div>
     <div class="nav-tab" data-page="p8">
       氣候實體風險預判
-      <span class="nav-tab-num">07</span>
+      <span class="nav-tab-num">06</span>
     </div>
-    <div class="nav-tab" data-page="p6">
-      集團ESG風險財務衝擊量化
-      <span class="nav-tab-num">08</span>
-    </div>
-  </div>
+</div>
   <div class="nav-footer">DEMO · 2026-03-25 提案版<br>永續辦公室 Sustainability Office</div>
 </nav>
 
@@ -526,60 +473,6 @@ table.heatmap td.avg-val{text-align:center;font-family:'DM Mono',monospace;font-
   </div>
 </div>
 
-<!-- ═══ PAGE 5: INDUSTRIAL SAFETY ═══ -->
-<div class="page" id="p5">
-  <div class="header">
-    <div>
-      <div class="section-label">Module 12 — Gaussian Dispersion + Probit Lethality Model</div>
-      <h1 class="section-title">工業安全風險預判</h1>
-      <p class="section-subtitle">HF 氣體擴散模型 × Probit 致死率函數 — 台南能元科技電池廠火災模擬</p>
-    </div>
-    <div class="header-right">
-      <div class="header-stat"><strong>3</strong> 種火災情境</div>
-      <div class="header-stat" style="margin-top:4px"><strong>Gaussian</strong> 擴散模型</div>
-      <div class="header-stat" style="margin-top:4px"><strong>Probit</strong> 致死率函數</div>
-    </div>
-  </div>
-
-  <!-- Scenario selector -->
-  <div class="is-scenario-btns" id="isScenarioBtns">
-    <div class="is-scenario-btn active" data-sc="A">A — 全區失火</div>
-    <div class="is-scenario-btn" data-sc="B">B — 單一防火分區</div>
-    <div class="is-scenario-btn" data-sc="C">C — 受控火災（最大規模）</div>
-  </div>
-
-  <!-- Params KPI -->
-  <div class="is-params" id="isParams"></div>
-
-  <!-- Map -->
-  <div class="is-map-container" id="isMap"></div>
-
-  <!-- Legend -->
-  <div class="is-legend">
-    <span><span class="is-legend-dot" style="background:rgba(255,0,0,0.5)"></span>50% 致死圈（紅色）</span>
-    <span><span class="is-legend-dot" style="background:rgba(255,165,0,0.4)"></span>1% 致死圈（橘色）</span>
-    <span><span class="is-legend-dot" style="background:#333"></span>火源位置（能元科技）</span>
-    <span style="margin-left:auto;font-size:11px;color:#bbb">底圖可切換街道/衛星 · 可縮放拖曳</span>
-  </div>
-
-  <!-- Formula -->
-  <div class="is-formula">
-    <div class="is-formula-title">物理模型公式</div>
-    <strong>HF 排放速率</strong>：<code>Q = Area × BurningFlux × F_content × ConversionRatio</code><br>
-    <strong>Gaussian 擴散</strong>：<code>C(x) = Q / (π × u × σy × σz)</code>，其中 σy, σz = Pasquill-Gifford 擴散參數<br>
-    <strong>Probit 致死率</strong>：<code>Pr = -8.4 + 1.0 × ln(C^1.5 × t)</code> → <code>P(death) = Φ(Pr - 5)</code><br>
-    <strong>參數</strong>：風速 5 m/s · 暴露時間 30 min · HF 含量 11.9% · 大氣穩定度 D 類
-  </div>
-
-  <div class="method-note">
-    <span class="method-tag">Application</span>
-    <div class="method-text">
-      <strong>用途</strong>：量化廠區火災的影響範圍，支援 HRDD 報告和 ESG 揭露。此原型已針對台南能元科技電池廠完成，計畫擴充至 TCC 全球廠區，涵蓋不同災害情境（火災、化學洩漏等）。
-      <strong>產出</strong>：致死半徑同心圓疊合衛星空照圖 → 直接輸出為互動式網頁供管理層決策參考。
-    </div>
-  </div>
-</div>
-
 <!-- ═══ PAGE 8: CLIMATE PHYSICAL RISK ═══ -->
 <div class="page" id="p8">
   <div class="header">
@@ -700,64 +593,9 @@ table.heatmap td.avg-val{text-align:center;font-family:'DM Mono',monospace;font-
             <span style="background:var(--charcoal);color:white;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700;margin-right:8px">Phase 4</span>
             <span style="font-weight:500">財務整合</span>
           </div>
-          <div style="font-size:11px;color:#888;padding-left:64px">CLIMADA EAD → <strong>Page 08 ESG 財務衝擊量化</strong>自動串接</div>
+          <div style="font-size:11px;color:#888;padding-left:64px">CLIMADA EAD → 後續整合財務衝擊量化模組</div>
         </div>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ PAGE 6: ESG FINANCIAL IMPACT ═══ -->
-<div class="page" id="p6">
-  <div class="header">
-    <div>
-      <div class="section-label">Integrated Risk Monetization — Modules 01–05 Consolidated</div>
-      <h1 class="section-title">集團 ESG 風險財務衝擊量化</h1>
-      <p class="section-subtitle">五大風險模組 × 機率 × 嚴重度 × 貨幣化 → 反映財報衝擊</p>
-    </div>
-    <div class="header-right">
-      <div class="header-stat"><strong>1,546</strong> 億營收基線</div>
-      <div class="header-stat" style="margin-top:4px"><strong>112.6</strong> 億稅後淨利</div>
-      <div class="header-stat" style="margin-top:4px"><strong>2024</strong> 財報年度</div>
-    </div>
-  </div>
-
-  <div class="fi-demo-tag">⚠ 示意概念 — 實際數字需各部門協作校準</div>
-
-  <!-- Scenario selector -->
-  <div class="fi-scenario-btns" id="fiScBtns">
-    <div class="fi-scenario-btn active" data-sc="base">基準情境 BAU</div>
-    <div class="fi-scenario-btn" data-sc="mid">中度衝擊情境</div>
-    <div class="fi-scenario-btn" data-sc="extreme">極端情境</div>
-  </div>
-
-  <!-- KPI row -->
-  <div class="fi-kpi-row" id="fiKpi"></div>
-
-  <!-- Waterfall chart -->
-  <div class="fi-waterfall-wrap">
-    <svg class="fi-waterfall-svg" id="fiWaterfall"></svg>
-  </div>
-
-  <!-- Risk detail cards -->
-  <div class="fi-detail-grid" id="fiDetails"></div>
-
-  <!-- Formula -->
-  <div class="fi-formula">
-    <strong>量化公式</strong>：<code>財務衝擊 = Σ (風險機率 × 衝擊嚴重度 × 貨幣化因子)</code><br>
-    <strong>風險機率</strong>：來自 Module 01–05 各模組的風險評分，轉換為年化發生機率<br>
-    <strong>衝擊嚴重度</strong>：營收損失 + 成本增加 + 資產減損 + 融資成本上升<br>
-    <strong>貨幣化因子</strong>：依台泥 2024 財報基線（營收 1,546 億 / 淨利 112.6 億 / 毛利率 21%）<br>
-    <strong>情境分析</strong>：參照 TCFD / ISSB IFRS S2 情境分析框架，分基準/中度/極端三情境
-  </div>
-
-  <div class="method-note">
-    <span class="method-tag">Framework</span>
-    <div class="method-text">
-      <strong>TCFD / ISSB IFRS S2</strong>：風險量化需轉譯為財務科目影響（營收/成本/資產/融資）。
-      <strong>Sustainalytics ESG Risk Ratings</strong>：unmanaged risk = exposure × (1 − management score)。
-      <strong>本頁定位</strong>：示意如何將 Module 01–05 的風險評分整合為董事會可用的財務決策資訊。
-      實際部署需各事業群提供具體營運數據 + 精算師/財務團隊校準貨幣化參數。
     </div>
   </div>
 </div>
@@ -1149,256 +987,6 @@ function renderSupTable(){
 let p4Init=false;
 new MutationObserver(()=>{if(document.getElementById('p4').classList.contains('active')&&!p4Init){p4Init=true;setTimeout(()=>{renderSupMatrix();renderSupTable();},100);}
 }).observe(document.getElementById('p4'),{attributes:true,attributeFilter:['class']});
-
-// ══════ PAGE 5: INDUSTRIAL SAFETY ══════
-const IS_DATA={
-  factory:{lat:23.114747910501976,lon:120.27750892455218,name:'台南能元科技電池廠'},
-  scenarios:{
-    A:{label:'全區失火 (Total Loss)',area:100,rate:1.2526,red:153.9,orange:354.7},
-    B:{label:'單一防火分區 (Fire Zone)',area:33.3,rate:0.4175,red:86.9,orange:195.8},
-    C:{label:'受控火災 (Controlled)',area:300,rate:3.7579,red:276.8,orange:660.4}
-  }
-};
-let isMap=null,isRedCircle=null,isOrangeCircle=null,curSc='A';
-
-function renderIsParams(sc){
-  const d=IS_DATA.scenarios[sc];
-  document.getElementById('isParams').innerHTML=`
-    <div class="is-param"><div class="is-param-val">${d.area}</div><div class="is-param-label">起火面積（m²）</div></div>
-    <div class="is-param"><div class="is-param-val">${d.rate.toFixed(3)}</div><div class="is-param-label">HF 排放速率（kg/s）</div></div>
-    <div class="is-param"><div class="is-param-val red">${d.red.toFixed(0)} m</div><div class="is-param-label">🔴 50% 致死半徑</div></div>
-    <div class="is-param"><div class="is-param-val orange">${d.orange.toFixed(0)} m</div><div class="is-param-label">🟠 1% 致死半徑</div></div>
-  `;
-}
-
-function initIsMap(){
-  const f=IS_DATA.factory;
-  isMap=L.map('isMap').setView([f.lat,f.lon],15);
-  // Street layer
-  const street=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19});
-  // Satellite layer
-  const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'© Esri',maxZoom:19});
-  sat.addTo(isMap);
-  L.control.layers({'街道圖':street,'衛星圖':sat}).addTo(isMap);
-  // Factory marker
-  L.marker([f.lat,f.lon]).addTo(isMap).bindPopup(`<b>${f.name}</b><br>火源位置`);
-  updateIsCircles('A');
-}
-
-function updateIsCircles(sc){
-  const f=IS_DATA.factory,d=IS_DATA.scenarios[sc];
-  if(isRedCircle){isMap.removeLayer(isRedCircle);isMap.removeLayer(isOrangeCircle);}
-  isOrangeCircle=L.circle([f.lat,f.lon],{radius:d.orange,color:'orange',weight:2,fillColor:'orange',fillOpacity:0.2,
-    dashArray:'6,4'}).addTo(isMap).bindTooltip(`1% 致死圈：${d.orange.toFixed(0)}m`,{permanent:false});
-  isRedCircle=L.circle([f.lat,f.lon],{radius:d.red,color:'red',weight:2,fillColor:'red',fillOpacity:0.35
-    }).addTo(isMap).bindTooltip(`50% 致死圈：${d.red.toFixed(0)}m`,{permanent:false});
-  // Fit bounds to orange circle
-  isMap.fitBounds(isOrangeCircle.getBounds().pad(0.3));
-  renderIsParams(sc);
-}
-
-// Scenario buttons
-document.getElementById('isScenarioBtns').addEventListener('click',e=>{
-  const btn=e.target.closest('.is-scenario-btn');
-  if(!btn)return;
-  curSc=btn.dataset.sc;
-  document.querySelectorAll('.is-scenario-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  if(isMap)updateIsCircles(curSc);
-});
-
-let p5Init=false;
-new MutationObserver(()=>{if(document.getElementById('p5').classList.contains('active')&&!p5Init){p5Init=true;setTimeout(()=>{initIsMap();renderIsParams('A');},200);}
-}).observe(document.getElementById('p5'),{attributes:true,attributeFilter:['class']});
-
-// ══════ PAGE 6: ESG FINANCIAL IMPACT ══════
-const FI_SCENARIOS = {
-  base: {
-    label: '基準情境 (BAU)',
-    risks: [
-      {id:'hr', name:'人權合規風險', prob:0.15, impact:15.2, color:'#6C5B7B',
-        items:['CSDDD 罰鍰風險 ~8 億','EU 市場禁入損失 ~5 億','合規建置成本 ~2.2 億'],
-        channel:'營收損失 + 成本增加'},
-      {id:'safety', name:'工安災害風險', prob:0.08, impact:4.6, color:'#BF4926',
-        items:['停工營收損失 ~2.5 億','復建費用 ~1.2 億','保險費上調 ~0.9 億'],
-        channel:'營收損失 + 資產減損'},
-      {id:'supply', name:'供應鏈違規風險', prob:0.25, impact:1.0, color:'#E6A817',
-        items:['裁罰轉嫁 ~0.3 億','替換供應商成本 ~0.5 億','供應中斷損失 ~0.2 億'],
-        channel:'成本增加'},
-      {id:'rep', name:'輿情聲譽風險', prob:0.20, impact:2.4, color:'#007EA7',
-        items:['品牌價值折損 ~1.2 億','ESG 評分降級融資成本 ~0.8 億','客戶流失 ~0.4 億'],
-        channel:'融資成本 + 營收損失'},
-      {id:'climate', name:'氣候風險', prob:0.60, impact:15.6, color:'#2A9D8F',
-        items:['【減碳合規】法規限制（CNS 03050 / 低碳建材指引未落實）致熟水比無法達標，碳費 300 元/噸 × 無法削減之排放量 → ~12.6 億/年','【極端天氣】全球廠區洪水/乾旱/颱風災損 + 供應鏈中斷 → ~3 億/年（詳見 07 氣候實體風險預判）'],
-        channel:'成本增加 + 資產減損'},
-    ]
-  },
-  mid: {
-    label: '中度衝擊情境',
-    risks: [
-      {id:'hr', name:'人權合規風險', prob:0.30, impact:25.5, color:'#6C5B7B',
-        items:['CSDDD 罰鍰 ~14 億（營收5%）','多國市場限制 ~8 億','合規團隊擴編 ~3.5 億'],
-        channel:'營收損失 + 成本增加'},
-      {id:'safety', name:'工安災害風險', prob:0.15, impact:12.8, color:'#BF4926',
-        items:['重大停工 ~7 億','全面復建 ~3.5 億','保費翻倍 ~2.3 億'],
-        channel:'營收損失 + 資產減損'},
-      {id:'supply', name:'供應鏈違規風險', prob:0.40, impact:3.2, color:'#E6A817',
-        items:['供應鏈斷裂損失 ~1.5 億','緊急替換溢價 ~1.2 億','法律訴訟 ~0.5 億'],
-        channel:'成本增加'},
-      {id:'rep', name:'輿情聲譽風險', prob:0.35, impact:6.8, color:'#007EA7',
-        items:['重大負面事件品牌折損 ~3 億','信評降級融資成本 ~2.5 億','大客戶流失 ~1.3 億'],
-        channel:'融資成本 + 營收損失'},
-      {id:'climate', name:'氣候風險', prob:0.75, impact:25.0, color:'#2A9D8F',
-        items:['【減碳合規】法規限制擴大 + 進口水泥零關稅侵蝕減碳誘因，碳費 500 元/噸 × 缺口擴大 → ~18 億/年','【極端天氣】極端事件頻率上升，多廠區同時受災，復建 + 停工 → ~7 億/年'],
-        channel:'成本增加 + 資產減損'},
-    ]
-  },
-  extreme: {
-    label: '極端情境',
-    risks: [
-      {id:'hr', name:'人權合規風險', prob:0.50, impact:46.0, color:'#6C5B7B',
-        items:['CSDDD 最高罰鍰 ~23 億（營收5%上限）','歐盟全面禁入 ~18 億','集團訴訟和解 ~5 億'],
-        channel:'營收損失 + 成本增加'},
-      {id:'safety', name:'工安災害風險', prob:0.25, impact:28.5, color:'#BF4926',
-        items:['多廠區連鎖事故 ~15 億','長期停工 ~8 億','政府勒令整改 ~5.5 億'],
-        channel:'營收損失 + 資產減損'},
-      {id:'supply', name:'供應鏈違規風險', prob:0.55, impact:8.0, color:'#E6A817',
-        items:['核心供應商停業 ~4 億','緊急進口溢價 ~2.5 億','客戶轉單 ~1.5 億'],
-        channel:'成本增加 + 營收損失'},
-      {id:'rep', name:'輿情聲譽風險', prob:0.50, impact:15.5, color:'#007EA7',
-        items:['國際醜聞品牌崩盤 ~8 億','信評連降融資成本 ~5 億','機構投資人撤資 ~2.5 億'],
-        channel:'融資成本 + 營收損失'},
-      {id:'climate', name:'氣候風險', prob:0.90, impact:43.0, color:'#2A9D8F',
-        items:['【減碳合規】法規全面鎖死減碳路徑 + 貨物稅不對等加劇，碳費 1,000 元/噸 × 大幅缺口 → ~28 億/年','【極端天氣】氣候臨界點突破，多區域同時重大災損 + 長期停工 + 擱置資產 → ~15 億/年'],
-        channel:'成本增加 + 資產減損'},
-    ]
-  }
-};
-const FI_REVENUE = 1546; // 億
-const FI_PROFIT = 112.6; // 億
-
-function renderFiKpi(sc){
-  const risks = FI_SCENARIOS[sc].risks;
-  const totalImpact = risks.reduce((s,r) => s + r.prob * r.impact, 0);
-  const adjProfit = FI_PROFIT - totalImpact;
-  const pctLoss = (totalImpact / FI_PROFIT * 100);
-  document.getElementById('fiKpi').innerHTML = `
-    <div class="fi-kpi"><div class="fi-kpi-val neutral">${FI_PROFIT.toFixed(1)}</div><div class="fi-kpi-label">2024 稅後淨利（億元）</div><div class="fi-kpi-sub">基線</div></div>
-    <div class="fi-kpi"><div class="fi-kpi-val negative">-${totalImpact.toFixed(1)}</div><div class="fi-kpi-label">ESG 風險期望損失（億元）</div><div class="fi-kpi-sub">Σ 機率×衝擊</div></div>
-    <div class="fi-kpi"><div class="fi-kpi-val ${adjProfit>0?'positive':'negative'}">${adjProfit.toFixed(1)}</div><div class="fi-kpi-label">風險調整後淨利（億元）</div><div class="fi-kpi-sub">${pctLoss>0?'-'+pctLoss.toFixed(1)+'%':'+'+(-pctLoss).toFixed(1)+'%'} 衝擊</div></div>
-  `;
-}
-
-function renderFiWaterfall(sc){
-  const svg = document.getElementById('fiWaterfall');
-  const risks = FI_SCENARIOS[sc].risks;
-  const totalImpact = risks.reduce((s,r) => s + r.prob * r.impact, 0);
-  const adjProfit = FI_PROFIT - totalImpact;
-
-  const items = [
-    {label:'稅後淨利\n(基線)', val:FI_PROFIT, type:'start', color:'#4A4A4A'},
-    ...risks.map(r => ({label:r.name, val: -(r.prob * r.impact), type:'loss', color:r.color, prob:r.prob, raw:r.impact})),
-    {label:'風險調整\n後淨利', val:adjProfit, type:'end', color:adjProfit>0?'#2A9D8F':'#BF4926'}
-  ];
-
-  const W = 1120, H = 520, padL = 70, padR = 40, padT = 50, padB = 90;
-  const chartW = W - padL - padR;
-  const chartH = H - padT - padB;
-  const barW = Math.min(110, chartW / items.length * 0.72);
-  const gap = (chartW - barW * items.length) / (items.length - 1);
-  const maxVal = FI_PROFIT * 1.1;
-  const yScale = chartH / maxVal;
-
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  let s = '';
-  // Grid
-  for(let v = 0; v <= maxVal; v += 20){
-    const y = padT + chartH - v * yScale;
-    s += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="rgba(0,0,0,0.05)" stroke-width="0.5"/>`;
-    if(v % 40 === 0) s += `<text x="${padL-10}" y="${y+4}" text-anchor="end" font-family="DM Mono" font-size="12" fill="#bbb">${v}</text>`;
-  }
-
-  let running = 0;
-  items.forEach((item, i) => {
-    const x = padL + i * (barW + gap);
-    let barTop, barH;
-
-    if(item.type === 'start'){
-      barTop = padT + chartH - item.val * yScale;
-      barH = item.val * yScale;
-      running = item.val;
-    } else if(item.type === 'end'){
-      barTop = padT + chartH - item.val * yScale;
-      barH = Math.abs(item.val) * yScale;
-    } else {
-      const newRunning = running + item.val;
-      barTop = padT + chartH - running * yScale;
-      barH = Math.abs(item.val) * yScale;
-      if(i > 0){
-        const prevX = padL + (i-1) * (barW + gap) + barW;
-        const connY = padT + chartH - running * yScale;
-        s += `<line x1="${prevX}" y1="${connY}" x2="${x}" y2="${connY}" stroke="rgba(0,0,0,0.12)" stroke-width="1" stroke-dasharray="4,3"/>`;
-      }
-      running = newRunning;
-    }
-
-    if(item.type === 'loss' && i === items.length - 2){
-      const nextX = padL + (i+1) * (barW + gap);
-      const connY = padT + chartH - running * yScale;
-      s += `<line x1="${x+barW}" y1="${connY}" x2="${nextX}" y2="${connY}" stroke="rgba(0,0,0,0.12)" stroke-width="1" stroke-dasharray="4,3"/>`;
-    }
-
-    const opacity = item.type === 'loss' ? 0.85 : 0.95;
-    s += `<rect x="${x}" y="${barTop}" width="${barW}" height="${Math.max(barH,2)}" fill="${item.color}" opacity="${opacity}" rx="2"/>`;
-
-    const valLabel = item.type === 'loss' ? item.val.toFixed(1) : item.val.toFixed(1);
-    const valInside = item.type === 'loss' && barH > 24;
-    s += `<text x="${x+barW/2}" y="${valInside ? barTop+barH/2+5 : barTop-8}" text-anchor="middle" font-family="DM Mono" font-size="14" font-weight="700" fill="${valInside?'#fff':item.color}">${valLabel}</text>`;
-
-    if(item.type === 'loss' && item.prob){
-      s += `<text x="${x+barW/2}" y="${barTop+barH+16}" text-anchor="middle" font-family="DM Mono" font-size="11" fill="#bbb">P=${(item.prob*100).toFixed(0)}%</text>`;
-    }
-
-    const lines = item.label.split('\n');
-    lines.forEach((line,li) => {
-      s += `<text x="${x+barW/2}" y="${padT+chartH+36+li*16}" text-anchor="middle" font-family="Noto Sans TC" font-size="${item.type==='loss'?'12':'13'}" font-weight="${item.type==='loss'?'400':'700'}" fill="${item.type==='loss'?'#888':'#444'}">${line}</text>`;
-    });
-  });
-
-  svg.innerHTML = s;
-}
-
-function renderFiDetails(sc){
-  const risks = FI_SCENARIOS[sc].risks;
-  document.getElementById('fiDetails').innerHTML = risks.map(r => {
-    const expected = (r.prob * r.impact).toFixed(1);
-    return `<div class="fi-detail-card" style="border-left-color:${r.color}">
-      <div class="fi-detail-card-title">${r.name}</div>
-      <div class="fi-detail-card-impact">-${expected} 億</div>
-      <div class="fi-detail-card-items">${r.items.map(it=>'· '+it).join('<br>')}</div>
-      <div class="fi-detail-card-prob">機率 ${(r.prob*100).toFixed(0)}% × 最大衝擊 ${r.impact.toFixed(1)} 億<br>→ 期望損失 ${expected} 億<br>${r.channel}</div>
-    </div>`;
-  }).join('');
-}
-
-function renderFi(sc){
-  renderFiKpi(sc);
-  renderFiWaterfall(sc);
-  renderFiDetails(sc);
-}
-
-// Scenario buttons
-document.getElementById('fiScBtns').addEventListener('click',e=>{
-  const btn=e.target.closest('.fi-scenario-btn');
-  if(!btn)return;
-  document.querySelectorAll('.fi-scenario-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderFi(btn.dataset.sc);
-});
-
-let p6Init=false;
-new MutationObserver(()=>{if(document.getElementById('p6').classList.contains('active')&&!p6Init){p6Init=true;setTimeout(()=>renderFi('base'),100);}
-}).observe(document.getElementById('p6'),{attributes:true,attributeFilter:['class']});
 
 // ══════ PAGE 7: CLIMATE RISK ══════
 const CR = {
